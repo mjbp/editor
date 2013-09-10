@@ -8,6 +8,30 @@
 (function (w, d) {
     'use strict';
     
+    var toolkit = {
+        extend: function (b, a) {
+            var p;
+            if (b === undefined) {
+                return a;
+            }
+            for (p in a) {
+                if (a.hasOwnProperty(p)) {
+                    b[p] = a[p];
+                }
+            }
+            return b;
+        },
+        forEach: function (a, fn) {
+            var i, l = a.length;
+            if ([].prototype.forEach) {
+                return a.forEach(callback);
+            }
+            for (i = 0; i < l; i += 1) {
+                fn.call(a[i], i, a);
+            }
+        }
+    };
+    
     function BVEditor(selector, opts) {
         return this.init(selector, opts);
     }
@@ -56,8 +80,10 @@
             }
             return this;
         },
-        init: function (selector, options) {
+        init: function (selector, opts) {
             //extend defaults with options
+            this.defaults = toolkit.extend(this.defaults, opts);
+            
             
             //set elements based on selector
             this.elements = document.querySelectorAll(selector);
