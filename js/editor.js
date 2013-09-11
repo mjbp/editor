@@ -47,7 +47,15 @@ function Editor(selector, opts) {
         defaults: {
             delay: 0
         },
-        utils : {
+        showUI : function () {
+            //this.gui.className = "text-options active";
+            return this;
+        },
+        hideUI : function (self) {
+            //this.gui.className = "text-options";
+            return this;
+        },
+        utils : {/*
             addEvent: function addEvent(element, eventName, func) {
                 if (element.addEventListener) {
                     element.addEventListener(eventName, func, false);
@@ -61,65 +69,7 @@ function Editor(selector, opts) {
                 } else if (element.attachEvent) {
                     element.detachEvent("on" + eventName, func);
                 }
-            }
-        },
-        checkForHighlight: function (e) {
-            /*
-            var newSelection;
-            if (this.keepToolbarAlive !== true) {
-                newSelection = window.getSelection();
-                if (newSelection.toString().trim() === '') {
-                    this.toolbar.style.display = 'none';
-                } else {
-                    this.selection = newSelection;
-                    this.selectionRange = this.selection.getRangeAt(0);
-                    this.toolbar.style.display = 'block';
-                    this.setToolbarPosition()
-                        .setToolbarButtonStates()
-                        .showToolbarActions();
-                }
             }*/
-            
-            /*
-            
-
-		var selection = window.getSelection();
-
-		if ( (event.target.className === "url-input" ||
-		     event.target.classList.contains( "url" ) ||
-		     event.target.parentNode.classList.contains( "ui-inputs")) ) {
-
-			currentNodeList = findNodes( selection.focusNode );
-			updateBubbleStates();
-			return;
-		}
-
-		// Check selections exist
-		if ( selection.isCollapsed === true && lastType === false ) {
-
-			onSelectorBlur();
-		}
-
-		// Text is selected
-		if ( selection.isCollapsed === false ) {
-
-			currentNodeList = findNodes( selection.focusNode );
-
-			// Find if highlighting is in the editable area
-			if ( hasNode( currentNodeList, "ARTICLE") ) {
-				updateBubbleStates();
-				updateBubblePosition();
-
-				// Show the ui bubble
-				textOptions.className = "text-options active";
-			}
-		}
-
-		lastType = selection.isCollapsed;
-        */
-            var selection = w.getSelection();
-            log('here');
-            return this;
         },
         initElements : function (selector) {
             var i;
@@ -129,14 +79,29 @@ function Editor(selector, opts) {
             return this;
         },
         listen : function () {
-            d.onkeyup = this.checkForHighlight();
-            d.onmousedown = this.checkForHighlight();
-            d.onmouseup = this.checkForHighlight();
+            var self = this,
+                i,
+                l = this.elements.length,
+                checkForHighlight = function () {
+                    this.selection = w.getSelection();
+                    if (this.selection.isCollapsed === false) {
+                        //show editor
+                        self.showUI();
+                    } else {
+                        self.ui.hideUI();
+                    }
+                };
+            
+            for (i = 0; i < l; i += 1) {
+                this.elements[i].onmouseup = checkForHighlight;
+                this.elements[i].onkeyup = checkForHighlight;
+            }
             return this;
         },
         init: function (selector, opts) {
             //extend defaults with options
             this.defaults = toolkit.extend(this.defaults, opts);
+            //this.ui = this.ui;
             
             log('initialised');
             //set elements based on selector
@@ -146,8 +111,10 @@ function Editor(selector, opts) {
             }
             
             log(this.elements);
+            this.gui = d.getElementById('editor');
             return this.initElements(selector)
                        .listen();
+            
             /*
             return this.initElements(selector)
                        .initToolbar()
