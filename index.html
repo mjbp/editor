@@ -65,13 +65,12 @@
 
 		
 
-		<section>
-			
-			<header contenteditable="true" class="header">
+		<section>			
+			<header class="editable">
 				This is a heading
 			</header>
 
-			<article contenteditable="true" class="content">
+			<article class="editable">
 
 				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam eu dapibus justo. Nulla facilisi. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Donec ornare nisl nec justo rutrum, vel lobortis mi hendrerit. Curabitur massa tellus, sodales vitae erat nec, dapibus volutpat mauris. Integer consequat at nunc et faucibus. Vivamus aliquet nulla laoreet, feugiat mauris vitae, varius mi. Sed pellentesque sagittis mauris ultrices cursus.</p>
 
@@ -82,9 +81,9 @@
 		</section>
 
 		<!-- JS -->
-		<script type="text/javascript">
-
-	
-		</script>
+		<script src="js/editor.js"></script>
+        <script>
+            var editor = new Editor('.editable');
+        </script>
 	</body>
 </html>
