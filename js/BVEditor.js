@@ -24,7 +24,7 @@
         forEach: function (a, fn) {
             var i, l = a.length;
             if ([].prototype.forEach) {
-                return a.forEach(callback);
+                return a.forEach(fn);
             }
             for (i = 0; i < l; i += 1) {
                 fn.call(a[i], i, a);
@@ -45,14 +45,14 @@
                 if (element.addEventListener) {
                     element.addEventListener(eventName, func, false);
                 } else if (element.attachEvent) {
-                    element.attachEvent("on" + eventName, func);
+                    element.attachEvent('on' + eventName, func);
                 }
             },
             removeEvent: function addEvent(element, eventName, func) {
                 if (element.addEventListener) {
                     element.removeEventListener(eventName, func, false);
                 } else if (element.attachEvent) {
-                    element.detachEvent("on" + eventName, func);
+                    element.detachEvent('on' + eventName, func);
                 }
             }
         },
