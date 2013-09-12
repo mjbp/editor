@@ -47,48 +47,88 @@ function Editor(selector, opts) {
         defaults: {
             delay: 0
         },
+        placeUI : function () {
+            this.range = this.selection.getRangeAt(0);
+            var boundary = this.range.getBoundingClientRect();
+            
+            this.gui.style.top = boundary.top - 48 + window.pageYOffset + "px";
+            this.gui.style.left = boundary.left / 2 + "px";
+            return this;
+        },
         showUI : function () {
-            //this.gui.className = "text-options active";
+            this.placeUI()
+                .gui.className = "text-options active";
             return this;
         },
         hideUI : function (self) {
-            //this.gui.className = "text-options";
+            this.gui.className = "text-options";
             return this;
         },
-        utils : {/*
-            addEvent: function addEvent(element, eventName, func) {
-                if (element.addEventListener) {
-                    element.addEventListener(eventName, func, false);
-                } else if (element.attachEvent) {
-                    element.attachEvent("on" + eventName, func);
-                }
-            },
-            removeEvent: function addEvent(element, eventName, func) {
-                if (element.addEventListener) {
-                    element.removeEventListener(eventName, func, false);
-                } else if (element.attachEvent) {
-                    element.detachEvent("on" + eventName, func);
-                }
-            }*/
+        bindUI : function () {
+            var buttons = d.querySelectorAll('button'),
+                i,
+                self = this,
+                buttonTrigger = function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    /*
+                    if (self.selection === undefined) {
+                        //refactor
+                        //self.checkSelection(e);
+                    }
+                    */
+                    if (this.className.indexOf('active') > -1) {
+                        this.className = this.className.replace(/active/g, '')
+                                             .replace(/\s{2}/g, ' ');
+                    } else {
+                        this.className += ' active';
+                    }
+                    self.executeStyle(this.getAttribute('data-command'));
+                };
+            for (i = 0; i < buttons.length; i += 1) {
+                buttons[i].onclick = buttonTrigger;
+            }
+            return this;
         },
-        initElements : function (selector) {
-            var i;
-            for (i = 0; i < this.elements.length; i += 1) {
+        executeStyle : function (c) {
+            //test these commands
+            var dispatchTable = {
+                    'bold' : function () { document.execCommand('bold', false); },
+                    'italic' : function () { document.execCommand('italic', false); },
+                    'ul' : function () { document.execCommand('insertunorderedlist', false); },
+                    'ol' : function () { document.execCommand('insertorderedlist', false); },
+                    'quote' : function () { document.execCommand('formatBlock', false, 'blockquote'); },
+                    'h1' : function () { document.execCommand('formatBlock', false, 'H1'); },
+                    'h2' : function () { document.execCommand('formatBlock', false, 'H2'); },
+                    'h3' : function () { document.execCommand('formatBlock', false, 'H3'); },
+                    'h4' : function () { document.execCommand('formatBlock', false, 'H4'); },
+                    'h5' : function () { document.execCommand('formatBlock', false, 'H5'); },
+                    'h6' : function () { document.execCommand('formatBlock', false, 'H6'); }
+                };
+            log(c);
+            dispatchTable[c]();
+            
+            return this;
+        },
+        initEditableElements : function (selector) {
+            var i,
+                l = this.elements.length;
+            for (i = 0; i < l; i += 1) {
                 this.elements[i].setAttribute('contentEditable', true);
             }
             return this;
         },
-        listen : function () {
+        bindSelect : function () {
             var self = this,
                 i,
                 l = this.elements.length,
                 checkForHighlight = function () {
-                    this.selection = w.getSelection();
-                    if (this.selection.isCollapsed === false) {
+                    self.selection = w.getSelection();
+                    if (self.selection.isCollapsed === false) {
                         //show editor
                         self.showUI();
                     } else {
-                        self.ui.hideUI();
+                        self.hideUI();
                     }
                 };
             
@@ -112,8 +152,9 @@ function Editor(selector, opts) {
             
             log(this.elements);
             this.gui = d.getElementById('editor');
-            return this.initElements(selector)
-                       .listen();
+            return this.initEditableElements(selector)
+                       .bindSelect()
+                       .bindUI();
             
             /*
             return this.initElements(selector)
