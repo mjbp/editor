@@ -39,6 +39,13 @@ function Editor(selector, opts) {
             for (i = 0; i < l; i += 1) {
                 fn.call(a[i], i, a);
             }
+        },
+        on : function (element, event, fn) {
+            if (element.addEventListener) {
+                element.addEventListener(event, fn, false);
+            } else {
+                element.attachEvent('on' + event, fn);
+            }
         }
     };
     
@@ -57,11 +64,12 @@ function Editor(selector, opts) {
         },
         showUI : function () {
             this.placeUI()
-                .gui.className = "text-options active";
+                .gui.className = "active";
             return this;
         },
         hideUI : function (self) {
-            this.gui.className = "text-options";
+            this.gui.className = "";
+            this.gui.style.top = "-100px";
             return this;
         },
         bindUI : function () {
@@ -86,7 +94,7 @@ function Editor(selector, opts) {
                     self.executeStyle(this.getAttribute('data-command'));
                 };
             for (i = 0; i < buttons.length; i += 1) {
-                buttons[i].onclick = buttonTrigger;
+                toolkit.on(buttons[i], 'click', buttonTrigger);
             }
             return this;
         },
@@ -133,8 +141,8 @@ function Editor(selector, opts) {
                 };
             
             for (i = 0; i < l; i += 1) {
-                this.elements[i].onmouseup = checkForHighlight;
-                this.elements[i].onkeyup = checkForHighlight;
+                toolkit.on(this.elements[i], 'mouseup', checkForHighlight);
+                toolkit.on(this.elements[i], 'keyup', checkForHighlight);
             }
             return this;
         },
