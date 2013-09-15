@@ -77,8 +77,10 @@ function Editor(selector, opts) {
                 i,
                 self = this,
                 buttonTrigger = function (e) {
+                    var command = this.getAttribute('data-command');
                     e.preventDefault();
                     e.stopPropagation();
+                    
                     /*
                     if (self.selection === undefined) {
                         //refactor
@@ -91,21 +93,47 @@ function Editor(selector, opts) {
                     } else {
                         this.className += ' active';
                     }
-                    self.executeStyle(this.getAttribute('data-command'));
+                    self.executeStyle(command);
                 };
             for (i = 0; i < buttons.length; i += 1) {
                 toolkit.on(buttons[i], 'click', buttonTrigger);
             }
             return this;
         },
+        setButtonStates : function () {
+            //check selected nodes parent and set button states
+            var parentNode = this.selection.anchorNode;
+            
+            /*
+             var parentNode = this.selection.anchorNode;
+            if (!parentNode.tagName) {
+                parentNode = this.selection.anchorNode.parentNode;
+            }
+            while (parentNode.tagName !== undefined && this.parentElements.indexOf(parentNode.tagName) === -1) {
+                this.activateButton(parentNode.tagName.toLowerCase());
+                parentNode = parentNode.parentNode;
+            }*/
+        },
         executeStyle : function (c) {
             //test these commands
-            var dispatchTable = {
+            var self = this,
+                dispatchTable = {
                     'bold' : function () { document.execCommand('bold', false); },
                     'italic' : function () { document.execCommand('italic', false); },
                     'ul' : function () { document.execCommand('insertunorderedlist', false); },
                     'ol' : function () { document.execCommand('insertorderedlist', false); },
-                    'quote' : function () { document.execCommand('formatBlock', false, 'blockquote'); },
+                    'quote' : function () {
+                        log(window.getSelection().anchorNode.parentNode.parentNode.nodeName);
+                        //check if quote is anchor/parentNode
+                        /*
+                        if (self.selection.focusNode.parentNode === c) {
+                            document.execCommand('formatBlock', false, 'p');
+                            document.execCommand('outdent');
+                        } else {
+                            document.execCommand('formatBlock', false, 'blockquote');
+                        }*/
+                        document.execCommand('formatBlock', false, 'blockquote');
+                    },
                     'h1' : function () { document.execCommand('formatBlock', false, 'H1'); },
                     'h2' : function () { document.execCommand('formatBlock', false, 'H2'); },
                     'h3' : function () { document.execCommand('formatBlock', false, 'H3'); },
@@ -113,7 +141,7 @@ function Editor(selector, opts) {
                     'h5' : function () { document.execCommand('formatBlock', false, 'H5'); },
                     'h6' : function () { document.execCommand('formatBlock', false, 'H6'); }
                 };
-            log(c);
+            //log(c);
             dispatchTable[c]();
             
             return this;
@@ -132,6 +160,10 @@ function Editor(selector, opts) {
                 l = this.elements.length,
                 checkForHighlight = function () {
                     self.selection = w.getSelection();
+                    
+                    //SELECTION NEEDS REFINING -> deal with isCollapsed more thoroughly
+                    
+                    
                     if (self.selection.isCollapsed === false) {
                         //show editor
                         self.showUI();
