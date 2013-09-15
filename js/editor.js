@@ -54,6 +54,19 @@ function Editor(selector, opts) {
         defaults: {
             delay: 0
         },
+        translations : {
+            'bold' : 'B',
+            'italic' : 'I',
+            'ul' : 'UL',
+            'ol' : 'OL',
+            'quote' : 'BLOCKQUOTE',
+            'h1' : 'H1',
+            'h2' : 'H2',
+            'h3' : 'H3',
+            'h4' : 'H4',
+            'h5' : 'H5',
+            'h6' : 'H6'
+        },
         placeUI : function () {
             this.range = this.selection.getRangeAt(0);
             var boundary = this.range.getBoundingClientRect();
@@ -72,6 +85,15 @@ function Editor(selector, opts) {
             this.gui.style.top = "-100px";
             return this;
         },
+        toggleButtonState : function (button) {
+            if (button.className.indexOf('active') > -1) {
+                button.className = button.className.replace(/active/g, '')
+                                             .replace(/\s{2}/g, ' ');
+            } else {
+                button.className += ' active';
+            }
+            return this;
+        },
         bindUI : function () {
             var buttons = d.querySelectorAll('button'),
                 i,
@@ -81,70 +103,134 @@ function Editor(selector, opts) {
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    /*
-                    if (self.selection === undefined) {
-                        //refactor
-                        //self.checkSelection(e);
-                    }
-                    */
-                    if (this.className.indexOf('active') > -1) {
-                        this.className = this.className.replace(/active/g, '')
-                                             .replace(/\s{2}/g, ' ');
-                    } else {
-                        this.className += ' active';
-                    }
-                    self.executeStyle(command);
+                    self.toggleButtonState(this)
+                        .executeStyle(command);
                 };
             for (i = 0; i < buttons.length; i += 1) {
                 toolkit.on(buttons[i], 'click', buttonTrigger);
             }
             return this;
         },
-        setButtonStates : function () {
-            //check selected nodes parent and set button states
-            var parentNode = this.selection.anchorNode;
-            
-            /*
-             var parentNode = this.selection.anchorNode;
-            if (!parentNode.tagName) {
-                parentNode = this.selection.anchorNode.parentNode;
-            }
-            while (parentNode.tagName !== undefined && this.parentElements.indexOf(parentNode.tagName) === -1) {
-                this.activateButton(parentNode.tagName.toLowerCase());
-                parentNode = parentNode.parentNode;
-            }*/
-        },
         executeStyle : function (c) {
             //test these commands
             var self = this,
                 dispatchTable = {
-                    'bold' : function () { document.execCommand('bold', false); },
-                    'italic' : function () { document.execCommand('italic', false); },
-                    'ul' : function () { document.execCommand('insertunorderedlist', false); },
-                    'ol' : function () { document.execCommand('insertorderedlist', false); },
+                    'bold' : function () { d.execCommand('bold', false); },
+                    'italic' : function () { d.execCommand('italic', false); },
+                    'ul' : function () {
+                        var parentNodes = self.findNodes(self.selection.focusNode);
+                        
+                        if (!!parentNodes.UL) {
+                            d.execCommand('insertunorderedlist', false);
+                            d.execCommand('formatBlock', false, 'p');
+                            //br added in firefox ;_;
+                        } else {
+                            d.execCommand('insertunorderedlist', false);
+                        }
+                    },
+                    'ol' : function () { d.execCommand('insertorderedlist', false); },
                     'quote' : function () {
-                        log(window.getSelection().anchorNode.parentNode.parentNode.nodeName);
-                        //check if quote is anchor/parentNode
-                        /*
-                        if (self.selection.focusNode.parentNode === c) {
-                            document.execCommand('formatBlock', false, 'p');
-                            document.execCommand('outdent');
+                        var parentNodes = self.findNodes(self.selection.focusNode);
+                        
+                        if (!!parentNodes.BLOCKQUOTE) {
+                            self.removeNode(parentNodes.BLOCKQUOTE);
                         } else {
                             document.execCommand('formatBlock', false, 'blockquote');
-                        }*/
-                        document.execCommand('formatBlock', false, 'blockquote');
+                        }
                     },
-                    'h1' : function () { document.execCommand('formatBlock', false, 'H1'); },
-                    'h2' : function () { document.execCommand('formatBlock', false, 'H2'); },
-                    'h3' : function () { document.execCommand('formatBlock', false, 'H3'); },
-                    'h4' : function () { document.execCommand('formatBlock', false, 'H4'); },
-                    'h5' : function () { document.execCommand('formatBlock', false, 'H5'); },
-                    'h6' : function () { document.execCommand('formatBlock', false, 'H6'); }
+                    'h1' : function () {
+                        var parentNodes = self.findNodes(self.selection.focusNode);
+                        
+                        if (!!parentNodes.H1) {
+                            d.execCommand('formatBlock', false, 'p');
+                            d.execCommand('outdent');
+                        } else {
+                            document.execCommand('formatBlock', false, 'H1');
+                        }
+                        
+                    },
+                    'h2' : function () {
+                        var parentNodes = self.findNodes(self.selection.focusNode);
+                        
+                        if (!!parentNodes.H2) {
+                            d.execCommand('formatBlock', false, 'p');
+                            d.execCommand('outdent');
+                        } else {
+                            d.execCommand('formatBlock', false, 'H2');
+                        }
+                        
+                    },
+                    'h3' : function () {
+                        var parentNodes = self.findNodes(self.selection.focusNode);
+                        
+                        if (!!parentNodes.H3) {
+                            d.execCommand('formatBlock', false, 'p');
+                            d.execCommand('outdent');
+                        } else {
+                            d.execCommand('formatBlock', false, 'H3');
+                        }
+                        
+                    },
+                    'h4' : function () {
+                        var parentNodes = self.findNodes(self.selection.focusNode);
+                        
+                        if (!!parentNodes.H4) {
+                            d.execCommand('formatBlock', false, 'p');
+                            d.execCommand('outdent');
+                        } else {
+                            document.execCommand('formatBlock', false, 'H4');
+                        }
+                        
+                    },
+                    'h5' : function () {
+                        var parentNodes = self.findNodes(self.selection.focusNode);
+                        
+                        if (!!parentNodes.H5) {
+                            d.execCommand('formatBlock', false, 'p');
+                            document.execCommand('outdent');
+                        } else {
+                            d.execCommand('formatBlock', false, 'H5');
+                        }
+                        
+                    },
+                    'h6' : function () {
+                        var parentNodes = self.findNodes(self.selection.focusNode);
+                        
+                        if (!!parentNodes.H6) {
+                            d.execCommand('formatBlock', false, 'p');
+                            d.execCommand('outdent');
+                        } else {
+                            d.execCommand('formatBlock', false, 'H6');
+                        }
+                        
+                    }
                 };
-            //log(c);
             dispatchTable[c]();
             
+            //update UI button states
+            //reposition UI
+            this.placeUI();
+            
             return this;
+        },
+        removeNode : function (node) {
+            var fragment = d.createDocumentFragment();
+            
+            while (node.firstChild) {
+                fragment.appendChild(node.firstChild);
+            }
+            node.parentNode.replaceChild(fragment, node);
+        },
+        findNodes : function (element) {
+            var nodeNames = {};
+            
+            //recursion through node parents
+            //array of nodes hierachy indexed by nodeName
+            while (element.parentNode) {
+                nodeNames[element.nodeName] = element;
+                element = element.parentNode;
+            }
+            return nodeNames;
         },
         initEditableElements : function (selector) {
             var i,
@@ -161,8 +247,7 @@ function Editor(selector, opts) {
                 checkForHighlight = function () {
                     self.selection = w.getSelection();
                     
-                    //SELECTION NEEDS REFINING -> deal with isCollapsed more thoroughly
-                    
+                    //SELECTION NEEDS REFINING??                
                     
                     if (self.selection.isCollapsed === false) {
                         //show editor
@@ -193,24 +278,9 @@ function Editor(selector, opts) {
             log(this.elements);
             this.gui = d.getElementById('editor');
             return this.initEditableElements(selector)
+                       //.initButtons()
                        .bindSelect()
                        .bindUI();
-            
-            /*
-            return this.initElements(selector)
-                       .initToolbar()
-                       .bindSelect()
-                       .bindButtons()
-                       .bindAnchorForm()
-                       .bindWindowActions();
-                       */
-            
-            //init toolbar and bind button actions to methods
-            
-            // check if text has been selected
-            
-            
-            
         }
     };
     
