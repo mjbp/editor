@@ -54,18 +54,18 @@ function Editor(selector, opts) {
         defaults: {
             delay: 0
         },
-        translations : {
-            'bold' : 'B',
-            'italic' : 'I',
-            'ul' : 'UL',
-            'ol' : 'OL',
-            'quote' : 'BLOCKQUOTE',
-            'h1' : 'H1',
-            'h2' : 'H2',
-            'h3' : 'H3',
-            'h4' : 'H4',
-            'h5' : 'H5',
-            'h6' : 'H6'
+        browserToHTML : {
+            'UL' : 'ul',
+            'OL' : 'ol',
+            'B' : 'bold',
+            'I' : 'italic',
+            'BLOCKQUOTE' : 'quote',
+            'H1' : 'h1',
+            'H2' : 'h2',
+            'H3' : 'h3',
+            'H4' : 'h4',
+            'H5' : 'h5',
+            'H6' : 'h6'
         },
         placeUI : function () {
             this.range = this.selection.getRangeAt(0);
@@ -103,8 +103,8 @@ function Editor(selector, opts) {
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    self.toggleButtonState(this)
-                        .executeStyle(command);
+                    //self.toggleButtonState(this)
+                    self.executeStyle(command);
                 };
             for (i = 0; i < buttons.length; i += 1) {
                 toolkit.on(buttons[i], 'click', buttonTrigger);
@@ -117,18 +117,8 @@ function Editor(selector, opts) {
                 dispatchTable = {
                     'bold' : function () { d.execCommand('bold', false); },
                     'italic' : function () { d.execCommand('italic', false); },
-                    'ul' : function () {
-                        var parentNodes = self.findNodes(self.selection.focusNode);
-                        
-                        if (!!parentNodes.UL) {
-                            d.execCommand('insertunorderedlist', false);
-                            d.execCommand('formatBlock', false, 'p');
-                            //br added in firefox ;_;
-                        } else {
-                            d.execCommand('insertunorderedlist', false);
-                        }
-                    },
-                    'ol' : function () { d.execCommand('insertorderedlist', false); },
+                    'ul' : function () { dispatchTable.list('UL'); },
+                    'ol' : function () { dispatchTable.list('OL'); },
                     'quote' : function () {
                         var parentNodes = self.findNodes(self.selection.focusNode);
                         
@@ -138,76 +128,38 @@ function Editor(selector, opts) {
                             document.execCommand('formatBlock', false, 'blockquote');
                         }
                     },
-                    'h1' : function () {
+                    'h1' : function () { dispatchTable.heading('H1'); },
+                    'h2' : function () { dispatchTable.heading('H2'); },
+                    'h3' : function () { dispatchTable.heading('H3'); },
+                    'h4' : function () { dispatchTable.heading('H4'); },
+                    'h5' : function () { dispatchTable.heading('H5'); },
+                    'h6' : function () { dispatchTable.heading('H6'); },
+                    'heading' : function (h) {
                         var parentNodes = self.findNodes(self.selection.focusNode);
                         
-                        if (!!parentNodes.H1) {
+                        if (!!parentNodes[h]) {
                             d.execCommand('formatBlock', false, 'p');
                             d.execCommand('outdent');
                         } else {
-                            document.execCommand('formatBlock', false, 'H1');
+                            d.execCommand('formatBlock', false, h);
                         }
-                        
                     },
-                    'h2' : function () {
+                    'list' : function (l) {
                         var parentNodes = self.findNodes(self.selection.focusNode);
                         
-                        if (!!parentNodes.H2) {
+                        if (!!parentNodes[l]) {
+                            self.removeNode(parentNodes.LI);
+                            self.removeNode(parentNodes.l);
                             d.execCommand('formatBlock', false, 'p');
-                            d.execCommand('outdent');
                         } else {
-                            d.execCommand('formatBlock', false, 'H2');
+                            d.execCommand('insertorderedlist', false);
                         }
-                        
-                    },
-                    'h3' : function () {
-                        var parentNodes = self.findNodes(self.selection.focusNode);
-                        
-                        if (!!parentNodes.H3) {
-                            d.execCommand('formatBlock', false, 'p');
-                            d.execCommand('outdent');
-                        } else {
-                            d.execCommand('formatBlock', false, 'H3');
-                        }
-                        
-                    },
-                    'h4' : function () {
-                        var parentNodes = self.findNodes(self.selection.focusNode);
-                        
-                        if (!!parentNodes.H4) {
-                            d.execCommand('formatBlock', false, 'p');
-                            d.execCommand('outdent');
-                        } else {
-                            document.execCommand('formatBlock', false, 'H4');
-                        }
-                        
-                    },
-                    'h5' : function () {
-                        var parentNodes = self.findNodes(self.selection.focusNode);
-                        
-                        if (!!parentNodes.H5) {
-                            d.execCommand('formatBlock', false, 'p');
-                            document.execCommand('outdent');
-                        } else {
-                            d.execCommand('formatBlock', false, 'H5');
-                        }
-                        
-                    },
-                    'h6' : function () {
-                        var parentNodes = self.findNodes(self.selection.focusNode);
-                        
-                        if (!!parentNodes.H6) {
-                            d.execCommand('formatBlock', false, 'p');
-                            d.execCommand('outdent');
-                        } else {
-                            d.execCommand('formatBlock', false, 'H6');
-                        }
-                        
                     }
                 };
             dispatchTable[c]();
             
             //update UI button states
+            this.updateUI();
             //reposition UI
             this.placeUI();
             

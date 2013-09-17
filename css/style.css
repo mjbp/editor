@@ -8,13 +8,6 @@
 	font-weight: normal;
 	font-style: normal;
 }
-
-/* Use the following CSS code if you want to have a class per icon */
-/*
-Instead of a list of all class selectors,
-you can use the generic selector below, but it's slower:
-[class*="icon-"] {
-*/
 .icon-bold, .icon-italic, .icon-picture, .icon-underline, .icon-quote-right, .icon-list-ul, .icon-list-ol {
 	font-family: 'fontawesome';
 	speak: none;
@@ -24,28 +17,7 @@ you can use the generic selector below, but it's slower:
 	text-transform: none;
 	line-height: 1;
 	-webkit-font-smoothing: antialiased;
-}/*
-.icon-bold:before {
-	content: "\f032";
 }
-.icon-italic:before {
-	content: "\f033";
-}
-.icon-picture:before {
-	content: "\f03e";
-}
-.icon-underline:before {
-	content: "\f0cd";
-}
-.icon-quote:before {
-	content: "\f10e";
-}
-.icon-list-ul:before {
-	content: "\f0ca";
-}
-.icon-list-ol:before {
-	content: "\f0cb";
-}*/
 /*********************************************
  * BASE STYLES
  *********************************************/
