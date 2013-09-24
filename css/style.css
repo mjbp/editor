@@ -151,7 +151,6 @@ a:hover {
 	opacity: 0.95;
 }
 #editor button.icon-quote {
-	line-height: 45px !important;
 	font-size: 49px !important;
 }
 #editor:before {

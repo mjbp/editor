@@ -3,6 +3,12 @@
  *  @name   editor
  *  @date   Sept 2013
  *  @by     mjbp
+ *  @todo   - fix all styles
+            - add link support
+            - add configuration options / limit options on headers
+            - add p on enter (e.keyCode === 13)
+            - delete p on delete/backspace
+            - paste without styles (remove )
  */
 
 function log(w) {
@@ -54,19 +60,6 @@ function Editor(selector, opts) {
         defaults: {
             delay: 0
         },
-        browserToHTML : {
-            'UL' : 'ul',
-            'OL' : 'ol',
-            'B' : 'bold',
-            'I' : 'italic',
-            'BLOCKQUOTE' : 'quote',
-            'H1' : 'h1',
-            'H2' : 'h2',
-            'H3' : 'h3',
-            'H4' : 'h4',
-            'H5' : 'h5',
-            'H6' : 'h6'
-        },
         placeUI : function () {
             this.range = this.selection.getRangeAt(0);
             var boundary = this.range.getBoundingClientRect();
@@ -111,6 +104,17 @@ function Editor(selector, opts) {
             }
             return this;
         },
+        chromeCleanUp : function () {
+            //check for and remove span in chrome ;_;
+            var self = this,
+                updatedNodes = self.findNodes(self.selection.focusNode);
+            
+            if (updatedNodes.SPAN) {
+                self.removeNode(updatedNodes.SPAN);
+            }
+            
+            return self;
+        },
         executeStyle : function (c) {
             //test these commands
             var self = this,
@@ -120,13 +124,18 @@ function Editor(selector, opts) {
                     'ul' : function () { dispatchTable.list('UL'); },
                     'ol' : function () { dispatchTable.list('OL'); },
                     'quote' : function () {
-                        var parentNodes = self.findNodes(self.selection.focusNode);
+                        var parentNodes = self.findNodes(self.selection.focusNode),
+                            text;
                         
                         if (!!parentNodes.BLOCKQUOTE) {
                             self.removeNode(parentNodes.BLOCKQUOTE);
+			                document.execCommand('outdent');
                         } else {
                             document.execCommand('formatBlock', false, 'blockquote');
                         }
+                        
+                        //mares - chrome removes p, 
+                        //so either cannot support multi-line quotes or re-wrap in p
                     },
                     'h1' : function () { dispatchTable.heading('H1'); },
                     'h2' : function () { dispatchTable.heading('H2'); },
@@ -144,22 +153,31 @@ function Editor(selector, opts) {
                             d.execCommand('formatBlock', false, h);
                         }
                     },
-                    'list' : function (l) {
-                        var parentNodes = self.findNodes(self.selection.focusNode);
+                    'list' : function (listType) {
+                        var parentNodes = self.findNodes(self.selection.focusNode),
+                            updatedNodes;
                         
-                        if (!!parentNodes[l]) {
+                        //self.prepare(listType);
+                        
+                        if (!!parentNodes[listType]) {
                             self.removeNode(parentNodes.LI);
-                            self.removeNode(parentNodes.l);
+                            self.removeNode(parentNodes[listType]);
                             d.execCommand('formatBlock', false, 'p');
+                            d.execCommand('outdent');
                         } else {
-                            d.execCommand('insertorderedlist', false);
+                            if (listType === 'UL') {
+                                d.execCommand('insertunorderedlist', false);
+                            } else {
+                                d.execCommand('insertorderedlist', false);
+                            }
                         }
                     }
                 };
             dispatchTable[c]();
+            self.chromeCleanUp();
             
             //update UI button states
-            this.updateUI();
+            //this.updateUI();
             //reposition UI
             this.placeUI();
             
@@ -172,6 +190,8 @@ function Editor(selector, opts) {
                 fragment.appendChild(node.firstChild);
             }
             node.parentNode.replaceChild(fragment, node);
+            
+            return this;
         },
         findNodes : function (element) {
             var nodeNames = {};
@@ -199,8 +219,7 @@ function Editor(selector, opts) {
                 checkForHighlight = function () {
                     self.selection = w.getSelection();
                     
-                    //SELECTION NEEDS REFINING??                
-                    
+                    //SELECTION NEEDS REFINING??
                     if (self.selection.isCollapsed === false) {
                         //show editor
                         self.showUI();
@@ -227,7 +246,7 @@ function Editor(selector, opts) {
                 return;
             }
             
-            log(this.elements);
+            //log(this.elements);
             this.gui = d.getElementById('editor');
             return this.initEditableElements(selector)
                        //.initButtons()
