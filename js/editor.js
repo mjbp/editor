@@ -127,8 +127,13 @@ function Editor(selector, opts) {
                         var parentNodes = self.findNodes(self.selection.focusNode),
                             text;
                         
+                        if (!!parentNodes.LI) {
+                            self.removeNode(parentNodes.LI);
+                            self.removeNode(parentNodes.UL) || self.removeNode(parentNodes.OL);
+                        }
                         if (!!parentNodes.BLOCKQUOTE) {
                             self.removeNode(parentNodes.BLOCKQUOTE);
+                            document.execCommand('formatBlock', false, 'p');
 			                document.execCommand('outdent');
                         } else {
                             document.execCommand('formatBlock', false, 'blockquote');
@@ -159,12 +164,19 @@ function Editor(selector, opts) {
                         
                         //self.prepare(listType);
                         
+                        
                         if (!!parentNodes[listType]) {
                             self.removeNode(parentNodes.LI);
                             self.removeNode(parentNodes[listType]);
                             d.execCommand('formatBlock', false, 'p');
                             d.execCommand('outdent');
                         } else {
+                            if (!!parentNodes.BLOCKQUOTE) {
+                                self.removeNode(parentNodes.BLOCKQUOTE);
+                            }
+                            if (!!parentNodes.P) {
+                                self.removeNode(parentNodes.P);
+                            }
                             if (listType === 'UL') {
                                 d.execCommand('insertunorderedlist', false);
                             } else {
