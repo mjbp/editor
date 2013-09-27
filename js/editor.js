@@ -146,77 +146,43 @@ function Editor(selector, opts) {
             /* remove all unwanted and empty nodes & attributes */
             /* new way */
             var self = this,
-                i,
-                l,
                 child,
                 disallowedEls = ['BR', 'SPAN'],
                 disallowedAttrs = ['class', 'style'],
-                j,
                 children,
-                k,
-                next,
-                removeBool = false,
-                walk = function (node, func) {
-                    children = node.childNodes;
-                    for (i = 0; i < children.length; i += 1) {
-                        func(children[i]);
-                        walk(children[i], func);
-                    }
-                };
+                elsToRemove = [],
+                i, l, j, k;
             
-            /******
-             * DOM TAVERSAL IS NOT WORK ;_; 
-             */
-            //console.log(this.liveElement);
-            walk(this.liveElement, function (node) {
-                if (node.nodeType === 1) {
-                    //remove unwanted attributes
-                    for (j = 0; j < disallowedAttrs.length; j += 1) {
-                        if (node.hasAttribute(disallowedAttrs[j])) {
-                            node.removeAttribute(disallowedAttrs[j]);
-                        }
-                    }
-                    //remove unwanted nodes
-                    for (k = 0; k < disallowedEls.length; k += 1) {
-                        if (disallowedEls[k] === node.nodeName) {
-                            removeBool = true;
-                        }
-                    }
-                    if (removeBool) {
-                        console.log('trying to remove...' + node);
-                        self.removeNode(node);
-                    }
-                }
-                if (!removeBool && /^\s*$/.test(node.innerHTML)) {
-                    self.removeNode(node);
-                }
-            });
-            /*
-            while (child) {
-                next = child.nextSibling;
-                nodeName = child.nodeName;
-                console.log(nodeName);
-                if (child.nodeType === 1) {
-                    //remove unwanted attributes
-                    for (j = 0; j < disallowedAttrs.length; j += 1) {
-                        if (child.hasAttribute(disallowedAttrs[j])) {
-                            child.removeAttribute(disallowedAttrs[j]);
-                        }
-                    }
-                }
+            children = this.liveElement.getElementsByTagName('*');
+            l = children.length;
+            
+            for (i = 0; i < l; i += 1) {
+                child = children[i];
                 
-                //remove unwanted nodes
-                for (k = 0; k < allowedEls.length; k += 1) {
-                    if (allowedEls[k] === nodeName) {
-                        removeBool = false;
+                 //remove unwanted attributes
+                for (j = 0; j < disallowedAttrs.length; j += 1) {
+                    if (child.hasAttribute(disallowedAttrs[j])) {
+                        child.removeAttribute(disallowedAttrs[j]);
                     }
                 }
-                if (removeBool || /^\s*$/.test(child.innerHTML)) {
-                    console.log('trying to remove...');
-                    self.removeNode(child);
+                //check if empty/whitespace-only
+                if (/^\s*$/.test(child.innerHTML)) {
+                    elsToRemove.push(child);
+                } else {
+                    //flag unwanted nodes
+                    for (k = 0; k < disallowedEls.length; k += 1) {
+                        if (disallowedEls[k] === child.tagName) {
+                            elsToRemove.push(child);
+                        }
+                    }
                 }
-                child = next;
-            }*/
+            }
+            //remove
+            if (elsToRemove.length) {
+                for (i = 0; i < elsToRemove.length; i += 1) {
+                    self.removeNode(elsToRemove[i]);
+                }
+            }
             
             return self;
         },
