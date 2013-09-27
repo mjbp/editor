@@ -3,11 +3,10 @@
  *  @name   editor
  *  @date   Sept 2013
  *  @by     mjbp
- *  @todo   - fix all styles
+ *  @todo   - add hr on double enter
+            - fix all styles
             - add link support
             - add configuration options / limit options on headers
-            - add p on enter (e.keyCode === 13)
-            - delete p on delete/backspace
             - paste without styles (remove )
  */
 
@@ -105,46 +104,8 @@ function Editor(selector, opts) {
             return this;
         },
         cleanUp : function (styleType) {
-            //needs attention
-            /*
-            the old way
-            //check for and remove span, br, empty elements and inline styles in chrome ;_;
-            var self = this,
-                updatedNodes = self.findNodes(self.selection.focusNode),
-                kids,
-                i,
-                l;
-            
-            if (!!updatedNodes.SPAN) {
-                self.removeNode(updatedNodes.SPAN);
-            }
-            if (styleType === "inline") {
-                kids = self.selection.focusNode.parentNode.childNodes;
-            } else {
-                kids = self.selection.focusNode.childNodes;
-            }
-            
-            l = kids.length;
-            for (i = 0; i < l; i += 1) {
-                //here be dragons - remove inline style added by chrome
-                if (kids[i].attributes) {
-                    if (kids[i].attributes.style) {
-                        kids[i].attributes.removeNamedItem('style');
-                    }
-                }
-                if (kids[i].nodeName === 'SPAN' || kids[i].nodeName === 'BR') {
-                    self.removeNode(kids[i]);
-                } else {
-                    //remove empty tags
-                    if (/^\s*$/.test(kids[i].innerHTML)) {
-                        self.removeNode(kids[i]);
-                    }
-                }
-            }
-            */
-            
             /* remove all unwanted and empty nodes & attributes */
-            /* new way */
+            /* OK, mostly there but can leave an orphaned LI if mincing around adding/removing lists and list items, best fix this */
             var self = this,
                 child,
                 disallowedEls = ['BR', 'SPAN'],
@@ -165,7 +126,7 @@ function Editor(selector, opts) {
                         child.removeAttribute(disallowedAttrs[j]);
                     }
                 }
-                //check if empty/whitespace-only
+                //check if empty/whitespace-only and flag as unwanted
                 if (/^\s*$/.test(child.innerHTML)) {
                     elsToRemove.push(child);
                 } else {
@@ -177,7 +138,7 @@ function Editor(selector, opts) {
                     }
                 }
             }
-            //remove
+            //remove unwanted
             if (elsToRemove.length) {
                 for (i = 0; i < elsToRemove.length; i += 1) {
                     self.removeNode(elsToRemove[i]);
@@ -186,15 +147,26 @@ function Editor(selector, opts) {
             
             return self;
         },
-        incompatibleElements : {
-            'UL' : ['BLOCKQUOTE', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'],
-            'OL' : ['BLOCKQUOTE', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'],
-            'BLOCKQUOTE' : ['LI', 'OL', 'UL'],
-            'heading' : ['BLOCKQUOTE', 'LI', 'OL', 'UL']
-        },
         executeStyle : function (c) {
             var self = this,
                 styleType,
+                incompatibleElements = {
+                    'UL' : ['BLOCKQUOTE', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'],
+                    'OL' : ['BLOCKQUOTE', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'],
+                    'BLOCKQUOTE' : ['LI', 'OL', 'UL'],
+                    'heading' : ['BLOCKQUOTE', 'LI', 'OL', 'UL']
+                },
+                removeIncompatibles = function (p, a) {
+                    var i,
+                        l = a.length;
+                    
+                    for (i = 0; i < l; i += 1) {
+                        if (!!p[a[i]]) {
+                            self.removeNode(p[a[i]]);
+                        }
+                    }
+                    return;
+                },
                 dispatchTable = {
                     'bold' : function () {
                         d.execCommand('bold', false);
@@ -207,20 +179,16 @@ function Editor(selector, opts) {
                     'ul' : function () { dispatchTable.list('UL'); },
                     'ol' : function () { dispatchTable.list('OL'); },
                     'quote' : function () {
-                        var parentNodes = self.findNodes(self.selection.focusNode),
+                        var parentNodes = self.findParentNodes(self.selection.focusNode),
                             text,
-                            i,
-                            incompatibles = self.incompatibleElements.heading,
-                            l = incompatibles.length;
+                            incompatibles = incompatibleElements.heading;
                         
                         //remove elements we don't want mixing...
-                        for (i = 0; i < l; i += 1) {
-                            if (!!parentNodes[incompatibles[i]]) {
-                                self.removeNode(parentNodes[incompatibles[i]]);
-                            }
-                        }
+                        removeIncompatibles(parentNodes, incompatibles);
+                        
                         if (!!parentNodes.BLOCKQUOTE) {
-                            self.removeNode(parentNodes.BLOCKQUOTE);
+                            //is this next line needed under windows/chrome but not ubuntu? ;_;
+                            //self.removeNode(parentNodes.BLOCKQUOTE);
                             d.execCommand('formatBlock', false, 'p');
 			                d.execCommand('outdent');
                         } else {
@@ -238,18 +206,11 @@ function Editor(selector, opts) {
                     'h5' : function () { dispatchTable.heading('H5'); },
                     'h6' : function () { dispatchTable.heading('H6'); },
                     'heading' : function (h) {
-                        var parentNodes = self.findNodes(self.selection.focusNode),
-                            i,
-                            incompatibles = self.incompatibleElements.heading,
-                            l = incompatibles.length;
+                        var parentNodes = self.findParentNodes(self.selection.focusNode),
+                            incompatibles = incompatibleElements.heading;
                         
-                        //remove elements we don't want mixing...
-                        //deja vu... refactor out
-                        for (i = 0; i < l; i += 1) {
-                            if (!!parentNodes[incompatibles[i]]) {
-                                self.removeNode(parentNodes[incompatibles[i]]);
-                            }
-                        }
+                        //remove elements we don't want mixing...                        
+                        removeIncompatibles(parentNodes, incompatibles);
                         
                         if (!!parentNodes[h]) {
                             d.execCommand('formatBlock', false, 'p');
@@ -261,11 +222,9 @@ function Editor(selector, opts) {
                         return;
                     },
                     'list' : function (listType) {
-                        var parentNodes = self.findNodes(self.selection.focusNode),
+                        var parentNodes = self.findParentNodes(self.selection.focusNode),
                             updatedNodes,
-                            i,
-                            incompatibles = self.incompatibleElements[listType],
-                            l = incompatibles.length;
+                            incompatibles = incompatibleElements[listType];
                         
                         if (!!parentNodes[listType]) {
                             self.removeNode(parentNodes.LI);
@@ -274,11 +233,8 @@ function Editor(selector, opts) {
                             d.execCommand('outdent');
                         } else {
                             //remove elements we don't want mixing...
-                            for (i = 0; i < l; i += 1) {
-                                if (!!parentNodes[incompatibles[i]]) {
-                                    self.removeNode(parentNodes[incompatibles[i]]);
-                                }
-                            }
+                            removeIncompatibles(parentNodes, incompatibles);
+                            
                             if (listType === 'UL') {
                                 d.execCommand('insertunorderedlist', false);
                             } else {
@@ -286,6 +242,10 @@ function Editor(selector, opts) {
                             }
                         }
                         return;
+                    },
+                    'hr' : function () {
+                        console.log('attempting to insert rule...');
+                        d.execCommand('insertHorizontalRule');
                     }
                 };
             dispatchTable[c]();
@@ -307,12 +267,11 @@ function Editor(selector, opts) {
                 //console.log(node.firstChild.parentElement);
                 fragment.appendChild(node.firstChild);
             }
-            console.log('boom:' + node + '> ' + node.parentNode);
             node.parentNode.replaceChild(fragment, node);
             
             return;
         },
-        findNodes : function (element) {
+        findParentNodes : function (element) {
             var nodeNames = {};
             //recursion through node parents
             //array of nodes hierachy indexed by nodeName
@@ -334,11 +293,25 @@ function Editor(selector, opts) {
             var self = this,
                 i,
                 l = this.elements.length,
-                checkForHighlight = function () {
+                checkForHighlight = function (e) {
                     self.selection = w.getSelection();
                     self.liveElement = this;
                     
-                    //SELECTION NEEDS REFINING??
+                    //this business needs work...
+                    console.log(e.keyCode);
+                    if (e.keyCode === 8 || e.keyCode === 46) {
+                        self.cleanUp();
+                    }
+                    if (e.keyCode === 13) {
+                        e.preventDefault();
+                        self.returnCounter += 1;
+                        if (self.returnCounter === 2) {                                
+                            self.returnCounter = 2;
+                            self.executeStyle('hr');
+                        }
+                    }
+                    
+                    //selection business is buggy, sort it out you claaart
                     if (self.selection.isCollapsed === false) {
                         //show editor
                         self.showUI();
@@ -349,23 +322,24 @@ function Editor(selector, opts) {
             
             for (i = 0; i < l; i += 1) {
                 toolkit.on(this.elements[i], 'mouseup', checkForHighlight);
-                toolkit.on(this.elements[i], 'keyup', checkForHighlight);
+                //toolkit.on(this.elements[i], 'keyup', checkForHighlight); ????
+                toolkit.on(this.elements[i], 'keypress', checkForHighlight);
             }
             return this;
         },
         init: function (selector, opts) {
             //extend defaults with options
             this.defaults = toolkit.extend(this.defaults, opts);
-            //this.ui = this.ui;
             
-            log('initialised');
             //set elements based on selector
             this.elements = document.querySelectorAll(selector);
             if (this.elements.length === 0) {
                 return;
             }
             
-            //log(this.elements);
+            //set up returnCounter
+            this.returnCounter = 0;
+            
             this.gui = d.getElementById('editor');
             return this.initEditableElements(selector)
                        //.initButtons()
