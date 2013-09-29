@@ -4,9 +4,9 @@
  *  @date   Sept 2013
  *  @by     mjbp
  *  @todo   - add hr on double enter
-            - fix all styles
+            - fix list to blockquote on multi-li selection 
             - add link support
-            - add configuration options / limit options on headers
+            - add configuration options (including color/bgColor of UI) / limit options on headers
             - paste without styles (remove )
  */
 
@@ -115,10 +115,12 @@ function Editor(selector, opts) {
                 i, l, j, k;
             
             children = this.liveElement.getElementsByTagName('*');
+            log(children);
             l = children.length;
             
             for (i = 0; i < l; i += 1) {
                 child = children[i];
+                //log(child);
                 
                  //remove unwanted attributes
                 for (j = 0; j < disallowedAttrs.length; j += 1) {
@@ -281,6 +283,11 @@ function Editor(selector, opts) {
             }
             return nodeNames;
         },
+        isList : function () {
+            var parentNodes = this.findParentNodes(this.selection.focusNode);
+            log(parentNodes);
+            return parentNodes.LI;
+        },
         initEditableElements : function (selector) {
             var i,
                 l = this.elements.length;
@@ -297,17 +304,20 @@ function Editor(selector, opts) {
                     self.selection = w.getSelection();
                     self.liveElement = this;
                     
-                    //this business needs work...
-                    console.log(e.keyCode);
                     if (e.keyCode === 8 || e.keyCode === 46) {
+                        log('cleaning..');
                         self.cleanUp();
-                    }
-                    if (e.keyCode === 13) {
-                        e.preventDefault();
-                        self.returnCounter += 1;
-                        if (self.returnCounter === 2) {                                
-                            self.returnCounter = 2;
-                            self.executeStyle('hr');
+                    } else {
+                        if (e.keyCode === 13) {
+                            if (!self.isList()) {
+                                //isn't in a list, allow, otherwise process for hr
+                                e.preventDefault();
+                                self.returnCounter += 1;
+                                if (self.returnCounter === 2) {
+                                    self.returnCounter = 2;
+                                    self.executeStyle('hr');
+                                }
+                            }
                         }
                     }
                     
@@ -322,8 +332,8 @@ function Editor(selector, opts) {
             
             for (i = 0; i < l; i += 1) {
                 toolkit.on(this.elements[i], 'mouseup', checkForHighlight);
-                //toolkit.on(this.elements[i], 'keyup', checkForHighlight); ????
-                toolkit.on(this.elements[i], 'keypress', checkForHighlight);
+                toolkit.on(this.elements[i], 'keydown', checkForHighlight);
+                toolkit.on(this.elements[i], 'keyup', checkForHighlight);
             }
             return this;
         },
