@@ -51,6 +51,44 @@ function Editor(selector, opts) {
             } else {
                 element.attachEvent('on' + event, fn);
             }
+        },/* next functions courtousy of Tim Down (stackoverflow.com/questions/2920150/insert-text-at-cursor-in-a-content-editable-div)*/
+        saveSelection : function () {
+            var i,
+                len,
+                ranges,
+                sel = w.getSelection();
+            if (sel.getRangeAt && sel.rangeCount) {
+                ranges = [];
+                for (i = 0, len = sel.rangeCount; i < len; i += 1) {
+                    ranges.push(sel.getRangeAt(i));
+                }
+                return ranges;
+            }
+            return null;
+        },
+        restoreSelection : function (savedSel) {
+            var i,
+                len,
+                sel = window.getSelection();
+            if (savedSel) {
+                sel.removeAllRanges();
+                for (i = 0, len = savedSel.length; i < len; i += 1) {
+                    sel.addRange(savedSel[i]);
+                }
+            }
+        },
+        insertTextAtCaret : function (text) {
+             var sel, range, html;
+                if (window.getSelection) {
+                    sel = window.getSelection();
+                    if (sel.getRangeAt && sel.rangeCount) {
+                        range = sel.getRangeAt(0);
+                        range.deleteContents();
+                        range.insertNode( document.createTextNode(text) );
+                    }
+                } else if (document.selection && document.selection.createRange) {
+                    document.selection.createRange().text = text;
+                }
         }
     };
     
@@ -105,7 +143,6 @@ function Editor(selector, opts) {
         },
         cleanUp : function (styleType) {
             /* remove all unwanted and empty nodes & attributes */
-            /* OK, mostly there but can leave an orphaned LI if mincing around adding/removing lists and list items, best fix this */
             var self = this,
                 child,
                 disallowedEls = ['BR', 'SPAN'],
@@ -115,13 +152,10 @@ function Editor(selector, opts) {
                 i, l, j, k;
             
             children = this.liveElement.getElementsByTagName('*');
-            log(children);
             l = children.length;
             
             for (i = 0; i < l; i += 1) {
                 child = children[i];
-                //log(child);
-                
                  //remove unwanted attributes
                 for (j = 0; j < disallowedAttrs.length; j += 1) {
                     if (child.hasAttribute(disallowedAttrs[j])) {
@@ -246,10 +280,17 @@ function Editor(selector, opts) {
                         return;
                     },
                     'hr' : function () {
-                        console.log('attempting to insert rule...');
-                        d.execCommand('insertHorizontalRule');
+                        //get caret position
+                        //get contents of current node
+                        //split into 2 nodes
+                        //add hr element node between
+                        //write page
+                        //d.execCommand('insertHorizontalRule', false);
+                        //d.execCommand("insertHtml", false, "<br>");
                     }
                 };
+            self.savedSelection = toolkit.saveSelection();
+            toolkit.restoreSelection(self.savedSelection);
             dispatchTable[c]();
             self.cleanUp();
             
@@ -285,8 +326,23 @@ function Editor(selector, opts) {
         },
         isList : function () {
             var parentNodes = this.findParentNodes(this.selection.focusNode);
-            log(parentNodes);
             return parentNodes.LI;
+        },
+        enterHandler : function (e) {
+            var self = this;
+            
+            if (!!self.isList()) {
+                self.cleanUp();
+            } else {
+                e.preventDefault();
+                self.returnCounter += 1;
+                log(self.returnCounter);
+                if (self.returnCounter === 2) {
+                    self.returnCounter = 0;
+                    self.executeStyle('hr');
+                }
+            }
+            
         },
         initEditableElements : function (selector) {
             var i,
@@ -305,19 +361,10 @@ function Editor(selector, opts) {
                     self.liveElement = this;
                     
                     if (e.keyCode === 8 || e.keyCode === 46) {
-                        log('cleaning..');
                         self.cleanUp();
                     } else {
                         if (e.keyCode === 13) {
-                            if (!self.isList()) {
-                                //isn't in a list, allow, otherwise process for hr
-                                e.preventDefault();
-                                self.returnCounter += 1;
-                                if (self.returnCounter === 2) {
-                                    self.returnCounter = 2;
-                                    self.executeStyle('hr');
-                                }
-                            }
+                            self.enterHandler(e);
                         }
                     }
                     
@@ -332,7 +379,7 @@ function Editor(selector, opts) {
             
             for (i = 0; i < l; i += 1) {
                 toolkit.on(this.elements[i], 'mouseup', checkForHighlight);
-                toolkit.on(this.elements[i], 'keydown', checkForHighlight);
+                //toolkit.on(this.elements[i], 'keypress', function (e) {e.preventDefault(); });
                 toolkit.on(this.elements[i], 'keyup', checkForHighlight);
             }
             return this;
@@ -346,8 +393,6 @@ function Editor(selector, opts) {
             if (this.elements.length === 0) {
                 return;
             }
-            
-            //set up returnCounter
             this.returnCounter = 0;
             
             this.gui = d.getElementById('editor');
