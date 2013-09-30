@@ -231,7 +231,7 @@ function Editor(selector, opts) {
                     'ul' : function () { dispatchTable.list('UL'); },
                     'ol' : function () { dispatchTable.list('OL'); },
                     'quote' : function () {
-                        var parentNodes = self.findParentNodes(self.selection.focusNode),
+                        var parentNodes = self.findParentNodes(self.selection.anchorNode),
                             text,
                             incompatibles = incompatibleElements.heading;
                         
@@ -255,7 +255,7 @@ function Editor(selector, opts) {
                     'h5' : function () { dispatchTable.heading('H5'); },
                     'h6' : function () { dispatchTable.heading('H6'); },
                     'heading' : function (h) {
-                        var parentNodes = self.findParentNodes(self.selection.focusNode),
+                        var parentNodes = self.findParentNodes(self.selection.anchorNode),
                             incompatibles = incompatibleElements.heading;
                         
                         //remove elements we don't want mixing...                        
@@ -271,21 +271,33 @@ function Editor(selector, opts) {
                         return;
                     },
                     'list' : function (listType) {
-                        var parentNodes = self.findParentNodes(self.selection.focusNode),
+                        var parentNodes = self.findParentNodes(self.selection.anchorNode),
                             updatedNodes,
+                            startNode,
+                            range,
+                            frag,
+                            endNode,
                             incompatibles = incompatibleElements[listType];
                         
-                        //self.selection.selectAllChildren();
-                        //log(self.countNodes(self.selection.focusNode, 'LI'));
+                        //get outer node
+                        //log(self.selection.anchorNode.parentNode);
+                        //startNode
+                        startNode = self.selection.anchorNode.parentNode;
+                        //endNode
+                        endNode = self.selection.focusNode.parentNode;
                         
+                        //log('start :' + startNode);
+                        //log('fin :' + endNode);
+                        //log(endNode.textContent.length);
+                        
+                        //IF BUGS PERSIST:
+                        //copy textContent start and end nodes
+                        //remove LIs and UL/OL from parent and insertBefore the nodes in Ps
                         if (!!parentNodes[listType]) {
-                            self.removeNode(parentNodes.LI);
-                            
-                            self.removeNode(parentNodes[listType]);
+                            //self.removeNode(parentNodes.LI);
+                            //self.removeNode(parentNodes[listType]);
                             d.execCommand('formatBlock', false, 'p');
                             d.execCommand('outdent');
-                            //if we've selected a couple of LIs, we need to remove the dregs 
-                            
                         } else {
                             //remove elements we don't want mixing...
                             removeIncompatibles(parentNodes, incompatibles);
