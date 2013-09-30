@@ -247,9 +247,6 @@ function Editor(selector, opts) {
                             d.execCommand('formatBlock', false, 'blockquote');
                         }
                         return;
-                        
-                        //mares - chrome removes p, 
-                        //so either cannot support multi-line quotes or re-wrap in p
                     },
                     'h1' : function () { dispatchTable.heading('H1'); },
                     'h2' : function () { dispatchTable.heading('H2'); },
@@ -278,11 +275,17 @@ function Editor(selector, opts) {
                             updatedNodes,
                             incompatibles = incompatibleElements[listType];
                         
+                        //self.selection.selectAllChildren();
+                        //log(self.countNodes(self.selection.focusNode, 'LI'));
+                        
                         if (!!parentNodes[listType]) {
                             self.removeNode(parentNodes.LI);
+                            
                             self.removeNode(parentNodes[listType]);
                             d.execCommand('formatBlock', false, 'p');
                             d.execCommand('outdent');
+                            //if we've selected a couple of LIs, we need to remove the dregs 
+                            
                         } else {
                             //remove elements we don't want mixing...
                             removeIncompatibles(parentNodes, incompatibles);
@@ -311,15 +314,16 @@ function Editor(selector, opts) {
         },
         removeNode : function (node) {
             var self = this,
+                replacedChild,
                 fragment = d.createDocumentFragment();
             
             while (node.firstChild) {
                 //console.log(node.firstChild.parentElement);
                 fragment.appendChild(node.firstChild);
             }
-            node.parentNode.replaceChild(fragment, node);
+            replacedChild = node.parentNode.replaceChild(fragment, node);
             
-            return;
+            return replacedChild;
         },
         findParentNodes : function (element) {
             var nodeNames = {};
