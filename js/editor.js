@@ -349,7 +349,6 @@ function Editor(selector, opts) {
                 if (range.startOffset === 0) {
                     e.preventDefault();
                     
-                    self.executeStyle('hr');
                     if (range.startContainer.parentNode.nodeName === 'P' && range.startOffset === 0 && previousNode.nodeName !== 'HR') {
                         self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
                     }
