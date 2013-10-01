@@ -419,11 +419,13 @@ function Editor(selector, opts) {
                 if (range.startOffset === 0 || endTester.textContent.length === 0) {
                     e.preventDefault();
                     
+                    log(previousNode.nodeName);
                     if (range.startContainer.parentNode.nodeName === 'P' && previousNode.nodeName !== 'HR') {
+                        //TEST
                         if (range.startOffset === 0) {
                             self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
                         } else {
-                            if (currentNode.nextSibling.nodeName !== 'HR') {
+                            if (currentNode.nextElementSibling != null && currentNode.nextSibling.nodeName !== 'HR') {
                                 self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode.nextSibling);
                             }
                         }
