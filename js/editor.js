@@ -3,10 +3,9 @@
  *  @name   editor
  *  @date   Sept 2013
  *  @by     mjbp
- *  @todo   - fix list nightmares - enter and blockquote on multi-li selection
-            - add link support
+ *  @todo   - add link support
             - add configuration options (including color/bgColor of UI) / limit options on headers
-            - paste without styles (remove )
+            - paste without styles (remove)
  */
 
 function log(w) {
@@ -122,7 +121,9 @@ function Editor(selector, opts) {
     Editor.prototype = {
         defaults: {
             delay: 0,
-            styles: ['b', 'i', 'ul', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']
+            styles: ['b', 'i', 'ul', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'],
+            toolBarBgColor: '0, 0, 0',
+            toolBarBtnColor: '255, 255, 255'
         },
         placeUI : function () {
             this.range = this.selection.getRangeAt(0);
@@ -327,16 +328,7 @@ function Editor(selector, opts) {
                         //endNode
                         endNode = self.selection.focusNode.parentNode;
                         
-                        //log('start :' + startNode);
-                        //log('fin :' + endNode);
-                        //log(endNode.textContent.length);
-                        
-                        //IF BUGS PERSIST:
-                        //copy textContent start and end nodes
-                        //remove LIs and UL/OL from parent and insertBefore the nodes in Ps
                         if (!!parentNodes[listType]) {
-                            //self.removeNode(parentNodes.LI);
-                            //self.removeNode(parentNodes[listType]);
                             d.execCommand('formatBlock', false, 'p');
                             d.execCommand('outdent');
                         } else {
@@ -371,7 +363,6 @@ function Editor(selector, opts) {
                 fragment = d.createDocumentFragment();
             
             while (node.firstChild) {
-                //console.log(node.firstChild.parentElement);
                 fragment.appendChild(node.firstChild);
             }
             replacedChild = node.parentNode.replaceChild(fragment, node);
@@ -406,6 +397,8 @@ function Editor(selector, opts) {
         enterHandler : function (e) {
             var self = this,
                 range,
+                endTester,
+                postRange,
                 rangeParent,
                 previousNode,
                 currentNode;
@@ -416,11 +409,24 @@ function Editor(selector, opts) {
                 range = self.selection.getRangeAt(0);
                 previousNode = range.startContainer.parentNode.previousSibling;
                 currentNode = range.startContainer.parentNode;
-                if (range.startOffset === 0) {
+                
+                //check if were a the end of a node
+                postRange = d.createRange();
+                postRange.selectNodeContents(range.endContainer);
+                postRange.setStart(range.endContainer, range.endOffset);
+                endTester = postRange.cloneContents();
+                
+                if (range.startOffset === 0 || endTester.textContent.length === 0) {
                     e.preventDefault();
                     
-                    if (range.startContainer.parentNode.nodeName === 'P' && range.startOffset === 0 && previousNode.nodeName !== 'HR') {
-                        self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
+                    if (range.startContainer.parentNode.nodeName === 'P' && previousNode.nodeName !== 'HR') {
+                        if (range.startOffset === 0) {
+                            self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
+                        } else {
+                            if (currentNode.nextSibling.nodeName !== 'HR') {
+                                self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode.nextSibling);
+                            }
+                        }
                     }
                     
                 }
@@ -449,24 +455,8 @@ function Editor(selector, opts) {
                 currentNode.parentNode.removeChild(currentNode);
                 previousNode.parentNode.replaceChild(replacement, previousNode);
                 
-                /*
-                self.selection.removeAllRanges();
-                range = document.createRange();
-                range.setStart(replacement, previousHTML.length / 2);
-                //range.selectNode(replacement);
-                range.collapse(true);
-                self.selection.addRange(range);
-                */
                 toolkit.restoreSelection(replacement, savedSelection);
             }
-        },
-        initEditableElements : function (selector) {
-            var i,
-                l = this.elements.length;
-            for (i = 0; i < l; i += 1) {
-                this.elements[i].setAttribute('contentEditable', true);
-            }
-            return this;
         },
         bindSelect : function () {
             var self = this,
@@ -505,6 +495,19 @@ function Editor(selector, opts) {
                 toolkit.on(this.elements[i], 'keydown', keyDown);
                 toolkit.on(this.elements[i], 'keyup', keyUp);
             }
+            return this;
+        },
+        initEditableElements : function (selector) {
+            var i,
+                l = this.elements.length;
+            for (i = 0; i < l; i += 1) {
+                this.elements[i].setAttribute('contentEditable', true);
+            }
+            return this;
+        },
+        initButtons : function () {
+            //TO DO: templatise and create dynamically
+            
             return this;
         },
         init: function (selector, opts) {
