@@ -189,17 +189,18 @@ function Editor(selector, opts) {
             var i, l, j, k,
                 self = this,
                 child,
+                frag,
                 disallowedEls = ['BR', 'SPAN'],
                 disallowedAttrs = ['class', 'style'],
                 children,
-                elsToRemove = [];
+                elsToFix = {remove : [], swap : []};
             
             children = this.liveElement.getElementsByTagName('*');
             l = children.length;
             
             for (i = 0; i < l; i += 1) {
                 child = children[i];
-                
+                //log(child);
                 child.normalize();
                 
                  //remove unwanted attributes
@@ -209,22 +210,31 @@ function Editor(selector, opts) {
                     }
                 }
                 //check if empty/whitespace-only and flag as unwanted
-                if (/^\s*$/.test(child.innerHTML) && child.nodeName !== 'HR') {
-                    //log(child);
-                    elsToRemove.push(child);
+                if (/^\s*$/.test(child.textContent) && child.nodeName !== 'HR') {
+                    elsToFix.remove.push(child);
                 } else {
                     //flag unwanted nodes
                     for (k = 0; k < disallowedEls.length; k += 1) {
                         if (disallowedEls[k] === child.tagName) {
-                            elsToRemove.push(child);
+                            elsToFix.remove.push(child);
                         }
+                    }
+                    //check for orphaned LIs
+                    if (child.nodeName === 'LI' && (child.parentNode.nodeName !== 'UL' && child.parentNode.nodeName !== 'OL')) {
+                        //log(child.parentNode);
+                        elsToFix.swap.push(child);
                     }
                 }
             }
             //remove unwanted
-            if (elsToRemove.length) {
-                for (i = 0; i < elsToRemove.length; i += 1) {
-                    self.removeNode(elsToRemove[i]);
+            if (elsToFix.remove.length) {
+                for (i = 0; i < elsToFix.remove.length; i += 1) {
+                    self.removeNode(elsToFix.remove[i]);
+                }
+            }
+            if (elsToFix.swap.length) {
+                for (i = 0; i < elsToFix.swap.length; i += 1) {
+                    self.swapNode(elsToFix.swap[i]);
                 }
             }
             
@@ -367,6 +377,19 @@ function Editor(selector, opts) {
             replacedChild = node.parentNode.replaceChild(fragment, node);
             
             return replacedChild;
+        },
+        swapNode : function (node, type) {
+            var fragment = d.createDocumentFragment(),
+                replacement;
+            type = type || 'p';
+            replacement = d.createElement(type);
+            while (node.firstChild) {
+                fragment.appendChild(node.firstChild);
+            }
+            replacement.appendChild(fragment);
+            node.parentNode.replaceChild(replacement, node);
+            
+            return;
         },
         findParentNodes : function (element) {
             var nodeNames = {};
