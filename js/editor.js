@@ -115,30 +115,32 @@ function Editor(selector, opts) {
             this.gui.style.top = "-100px";
             return this;
         },
-        updateUI : function () {
-            var i, l, btn, state,
-                parentNodes = this.findParentNodes(this.selection.focusNode);
-            l = this.defaults.styles.length;
+        resetButtonState : function () {
+            var i,
+                buttons = this.gui.querySelectorAll('button'),
+                l = buttons.length;
             
-            //if in parentNodes, update button state
             for (i = 0; i < l; i += 1) {
-                state = 'inactive';
-                if (parentNodes[this.defaults.styles[i].toUpperCase()]) {
-                    state = 'active';
-                }
-                btn = d.getElementById('editor-' + this.defaults.styles[i]);
-                this.toggleButtonState(btn, state);
+                buttons[i].className = buttons[i].className.replace(/active/g, '').replace(/\s{2}/g, ' ');
             }
-            return this;
         },
-        toggleButtonState : function (button, state) {
-            if (button.className.indexOf('active') > -1 || state === 'inactive') {
-                button.className = button.className.replace(/active/g, '')
-                                             .replace(/\s{2}/g, ' ');
-            } else {
-                button.className += ' active';
+        updateButtonState : function () {
+            var i,
+                button,
+                parentNodes = this.findParentNodes(this.selection.anchorNode),
+                l = parentNodes.length;
+            
+            this.resetButtonState();
+            
+            
+            for (i in parentNodes) {
+                if (parentNodes.hasOwnProperty(i)) {
+                    button = d.getElementById('editor-' + i.toLowerCase());
+                    if (button && button.className.indexOf('active') === -1) {
+                        button.className = button.className + ' active';
+                    }
+                }
             }
-            return this;
         },
         bindUI : function () {
             var buttons = d.querySelectorAll('button'),
@@ -149,7 +151,6 @@ function Editor(selector, opts) {
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    self.toggleButtonState(this);
                     self.executeStyle(command);
                 };
             for (i = 0; i < buttons.length; i += 1) {
@@ -317,10 +318,10 @@ function Editor(selector, opts) {
             self.cleanUp();
             
             //update UI button states
-            this.updateUI();
+            self.updateButtonState();
             //reselect if seleciton has failed (see adding list style)
             //reposition UI
-            this.placeUI();
+            self.placeUI();
             
             return this;
         },
@@ -406,7 +407,7 @@ function Editor(selector, opts) {
                     //selection business is buggy, sort it out you claaart
                     if (self.selection.isCollapsed === false) {
                         //show editor
-                        self.updateUI();
+                        self.updateButtonState();
                         self.showUI();
                     } else {
                         self.hideUI();
