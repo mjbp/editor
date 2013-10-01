@@ -50,31 +50,58 @@ function Editor(selector, opts) {
             } else {
                 element.attachEvent('on' + event, fn);
             }
-        },/* next functions courtousy of Tim Down (stackoverflow.com/questions/2920150/insert-text-at-cursor-in-a-content-editable-div)*/
-        saveSelection : function () {
-            var i,
-                len,
-                ranges,
-                sel = w.getSelection();
-            if (sel.getRangeAt && sel.rangeCount) {
-                ranges = [];
-                for (i = 0, len = sel.rangeCount; i < len; i += 1) {
-                    ranges.push(sel.getRangeAt(i));
-                }
-                return ranges;
-            }
-            return null;
+        },/* next functions courteousy of Tim Down, taken from Stack Overflow */
+        saveSelection : function (containerEl) {
+            var start,
+                range = window.getSelection().getRangeAt(0),
+                preSelectionRange = range.cloneRange();
+            
+            preSelectionRange.selectNodeContents(containerEl);
+            preSelectionRange.setEnd(range.startContainer, range.startOffset);
+            start = preSelectionRange.toString().length;
+
+            return {
+                start: start,
+                end: start + range.toString().length
+            };
         },
-        restoreSelection : function (savedSel) {
+        restoreSelection : function (containerEl, savedSel) {
             var i,
-                len,
-                sel = window.getSelection();
-            if (savedSel) {
-                sel.removeAllRanges();
-                for (i = 0, len = savedSel.length; i < len; i += 1) {
-                    sel.addRange(savedSel[i]);
+                sel,
+                charIndex = 0,
+                range = document.createRange(),
+                nodeStack = [containerEl],
+                node,
+                nextCharIndex,
+                foundStart = false,
+                stop = false;
+            range.setStart(containerEl, 0);
+            range.collapse(true);
+            
+    
+            while (!stop && (node = nodeStack.pop())) {
+                if (node.nodeType === 3) {
+                    nextCharIndex = charIndex + node.length;
+                    if (!foundStart && savedSel.start >= charIndex && savedSel.start <= nextCharIndex) {
+                        range.setStart(node, savedSel.start - charIndex);
+                        foundStart = true;
+                    }
+                    if (foundStart && savedSel.end >= charIndex && savedSel.end <= nextCharIndex) {
+                        range.setEnd(node, savedSel.end - charIndex);
+                        stop = true;
+                    }
+                    charIndex = nextCharIndex;
+                } else {
+                    i = node.childNodes.length;
+                    while (i--) {
+                        nodeStack.push(node.childNodes[i]);
+                    }
                 }
             }
+    
+            sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
         },
         insertTextAtCaret : function (text) {
             var sel, range, html;
@@ -172,6 +199,9 @@ function Editor(selector, opts) {
             
             for (i = 0; i < l; i += 1) {
                 child = children[i];
+                
+                child.normalize();
+                
                  //remove unwanted attributes
                 for (j = 0; j < disallowedAttrs.length; j += 1) {
                     if (child.hasAttribute(disallowedAttrs[j])) {
@@ -312,8 +342,8 @@ function Editor(selector, opts) {
                         return;
                     }
                 };
-            self.savedSelection = toolkit.saveSelection();
-            toolkit.restoreSelection(self.savedSelection);
+            self.savedSelection = toolkit.saveSelection(self.liveElement);
+            toolkit.restoreSelection(self.liveElement, self.savedSelection);
             dispatchTable[c]();
             self.cleanUp();
             
@@ -369,9 +399,43 @@ function Editor(selector, opts) {
                     if (range.startContainer.parentNode.nodeName === 'P' && range.startOffset === 0 && previousNode.nodeName !== 'HR') {
                         self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
                     }
+                    
                 }
             }
             
+        },
+        backspaceHandler : function (e) {
+            var previousNode, previousHTML, currentNode, currentHTML, replacement, savedSelection, replacementName,
+                self = this,
+                range = self.selection.getRangeAt(0);
+            
+            if (range.startOffset === 0) {
+                previousNode = range.startContainer.parentNode.previousElementSibling;
+                previousHTML = previousNode.innerHTML;
+                currentNode = range.startContainer.parentNode;
+                currentHTML = currentNode.innerHTML;
+                replacementName = previousNode.nodeName === 'HR' ? 'p' : previousNode.nodeName.toLowerCase();
+                
+                replacement = d.createElement(replacementName);
+                
+                e.preventDefault();
+                
+                savedSelection = toolkit.saveSelection(previousNode);
+                
+                replacement.innerHTML = previousHTML + currentHTML;
+                currentNode.parentNode.removeChild(currentNode);
+                previousNode.parentNode.replaceChild(replacement, previousNode);
+                
+                /*
+                self.selection.removeAllRanges();
+                range = document.createRange();
+                range.setStart(replacement, previousHTML.length / 2);
+                //range.selectNode(replacement);
+                range.collapse(true);
+                self.selection.addRange(range);
+                */
+                toolkit.restoreSelection(replacement, savedSelection);
+            }
         },
         initEditableElements : function (selector) {
             var i,
@@ -389,9 +453,8 @@ function Editor(selector, opts) {
                     if (e.keyCode === 13) {
                         self.enterHandler(e);
                     } else {
-                        self.enterCounter = 0;
-                        if (e.keyCode === 8 || e.keyCode === 46) {
-                            return false;
+                        if (e.keyCode === 8) {
+                            self.backspaceHandler(e);
                         }
                     }
                 },
