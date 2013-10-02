@@ -77,9 +77,9 @@ function Editor(selector, opts) {
                 stop = false;
             range.setStart(containerEl, 0);
             range.collapse(true);
-            
     
-            while (!stop && (node = nodeStack.pop())) {
+            while (!stop) {
+                node = nodeStack.pop();
                 if (node.nodeType === 3) {
                     nextCharIndex = charIndex + node.length;
                     if (!foundStart && savedSel.start >= charIndex && savedSel.start <= nextCharIndex) {
@@ -93,10 +93,12 @@ function Editor(selector, opts) {
                     charIndex = nextCharIndex;
                 } else {
                     i = node.childNodes.length;
-                    while (i--) {
+                    while (i >= 0) {
                         nodeStack.push(node.childNodes[i]);
+                        i -= 1;
                     }
                 }
+                
             }
     
             sel = window.getSelection();
@@ -127,7 +129,7 @@ function Editor(selector, opts) {
             return this;
         },
         hideUI : function (self) {
-            this.gui.className = "";
+            this.gui.className.replace(/active/g, '').replace(/\s{2}/g, ' ');
             this.gui.style.top = "-100px";
             return this;
         },
@@ -275,7 +277,7 @@ function Editor(selector, opts) {
                             //is this next line needed under windows/chrome but not ubuntu? ;_;
                             //self.removeNode(parentNodes.BLOCKQUOTE);
                             d.execCommand('formatBlock', false, 'p');
-			                d.execCommand('outdent');
+                            d.execCommand('outdent');
                         } else {
                             d.execCommand('formatBlock', false, 'blockquote');
                         }
@@ -324,6 +326,13 @@ function Editor(selector, opts) {
                                 d.execCommand('insertorderedlist', false);
                             }
                         }
+                    },
+                    'link' : function () {
+                        var timer;
+                        self.gui.className = self.gui.className + " link-mode";
+                        w.setTimeout(function () {
+                            d.getElementById('editor-link-field').focus();
+                        }, 500);
                     }
                 };
             self.savedSelection = toolkit.saveSelection(self.liveElement);
@@ -399,10 +408,7 @@ function Editor(selector, opts) {
                 
                 if (range.startOffset === 0 || endTester.textContent.length === 0) {
                     e.preventDefault();
-                    
-                    log(previousNode.nodeName);
                     if (range.startContainer.parentNode.nodeName === 'P' && previousNode.nodeName !== 'HR') {
-                        //TEST
                         if (range.startOffset === 0) {
                             self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
                         } else {
@@ -445,13 +451,13 @@ function Editor(selector, opts) {
         },
         bindSelect : function () {
             var self = this,
+                cancelBtn,
                 i,
                 l = this.elements.length,
                 checkForHighlight = function (e) {
                     self.selection = w.getSelection();
                     self.liveElement = this;
                     
-                    //selection business is buggy, sort it out you claaart
                     if (self.selection.isCollapsed === false) {
                         //show editor
                         self.updateButtonState();
@@ -475,6 +481,10 @@ function Editor(selector, opts) {
                         self.cleanUp();
                     }
                     checkForHighlight.call(this);
+                },
+                cancelLink = function () {
+                    self.gui.className.replace(/link-mode/g, '').replace(/\s{2}/g, ' ');
+                    d.getElementById('editor-link-field').blur();
                 };
             
             for (i = 0; i < l; i += 1) {
@@ -508,6 +518,7 @@ function Editor(selector, opts) {
             }
             
             this.gui = d.getElementById('editor');
+            
             return this.initEditableElements(selector)
                        //.initButtons()
                        .bindSelect()
