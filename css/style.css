@@ -1,15 +1,22 @@
+/*!
+ *  Icon Set:	Font Awesome -- http://fortawesome.github.com/Font-Awesome/
+ *  License:	SIL -- http://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL
+ *
+ *  Icon Set:	IcoMoon - Free -- http://keyamoon.com/icomoon
+ *  License:	CC BY 3.0 -- http://creativecommons.org/licenses/by/3.0/
+ */
 @font-face {
-	font-family: 'fontawesome';
-	src:url('../fonts/fontawesome.eot');
-	src:url('../fonts/fontawesome.eot?#iefix') format('embedded-opentype'),
-		url('../fonts/fontawesome.woff') format('woff'),
-		url('../fonts/fontawesome.ttf') format('truetype'),
-		url('../fonts/fontawesome.svg#fontawesome') format('svg');
+	font-family: 'icomoon';
+	src:url('../fonts/icomoon.eot');
+	src:url('../fonts/icomoon.eot?#iefix') format('embedded-opentype'),
+		url('../fonts/icomoon.woff') format('woff'),
+		url('../fonts/icomoon.ttf') format('truetype'),
+		url('../fonts/icomoon.svg#icomoon') format('svg');
 	font-weight: normal;
 	font-style: normal;
 }
-.icon-bold, .icon-italic, .icon-picture, .icon-underline, .icon-quote-right, .icon-list-ul, .icon-list-ol {
-	font-family: 'fontawesome';
+.icon-bold, .icon-italic, .icon-link, .icon-list-ul, .icon-list-ol, .icon-quote {
+	font-family: 'icomoon';
 	speak: none;
 	font-style: normal;
 	font-weight: normal;
@@ -17,7 +24,26 @@
 	text-transform: none;
 	line-height: 1;
 	-webkit-font-smoothing: antialiased;
+}/*
+.icon-bold:before {
+	content: "\f032";
 }
+.icon-italic:before {
+	content: "\f033";
+}
+.icon-link:before {
+	content: "\e001";
+}
+.icon-list-ul:before {
+	content: "\f0ca";
+}
+.icon-list-ol:before {
+	content: "\f0cb";
+}
+.icon-quotes-left:before {
+	content: "\e000";
+}*/
+
 /*********************************************
  * BASE STYLES
  *********************************************/
@@ -86,7 +112,7 @@ blockquote {
 .useicons {
 	-webkit-font-smoothing: antialiased;
 	font-size: 20px !important;
-	font-family: 'fontawesome' !important;
+	font-family: 'icomoon' !important;
 }
 
 a {
@@ -139,7 +165,7 @@ a:hover {
 }
 #editor button.icon {
     overflow:hidden;
-    font-family:"fontawesome" !important;
+    font-family:"icomoon" !important;
 	-webkit-font-smoothing: antialiased;
 	font-size: 18px !important;
 }
@@ -151,7 +177,7 @@ a:hover {
 	opacity: 0.95;
 }
 #editor button.icon-quote {
-	font-size: 49px !important;
+	/*font-size: 49px !important;*/
 }
 #editor:before {
 	content: "";
