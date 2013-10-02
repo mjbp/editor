@@ -72,6 +72,7 @@ function Editor(selector, opts) {
                 nodeStack = [containerEl],
                 node,
                 nextCharIndex,
+                result,
                 foundStart = false,
                 stop = false;
             range.setStart(containerEl, 0);
@@ -100,20 +101,7 @@ function Editor(selector, opts) {
     
             sel = window.getSelection();
             sel.removeAllRanges();
-            sel.addRange(range);
-        },
-        insertTextAtCaret : function (text) {
-            var sel, range, html;
-            if (window.getSelection) {
-                sel = window.getSelection();
-                if (sel.getRangeAt && sel.rangeCount) {
-                    range = sel.getRangeAt(0);
-                    range.deleteContents();
-                    range.insertNode(document.createTextNode(text));
-                }
-            } else if (document.selection && document.selection.createRange) {
-                document.selection.createRange().text = text;
-            }
+            result = sel.addRange(range);
         }
     };
     
@@ -151,6 +139,7 @@ function Editor(selector, opts) {
             for (i = 0; i < l; i += 1) {
                 buttons[i].className = buttons[i].className.replace(/active/g, '').replace(/\s{2}/g, ' ');
             }
+            return this;
         },
         updateButtonState : function () {
             var i,
@@ -169,6 +158,7 @@ function Editor(selector, opts) {
                     }
                 }
             }
+            return this;
         },
         bindUI : function () {
             var buttons = d.querySelectorAll('button'),
@@ -241,9 +231,12 @@ function Editor(selector, opts) {
             
             return self;
         },
+        isBlockStyle : function (style) {
+            return style !== 'bold' || style !== 'italic';
+        },
         executeStyle : function (c) {
             var self = this,
-                styleType,
+                display,
                 incompatibleElements = {
                     'UL' : ['BLOCKQUOTE', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'],
                     'OL' : ['BLOCKQUOTE', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'],
@@ -264,11 +257,9 @@ function Editor(selector, opts) {
                 dispatchTable = {
                     'bold' : function () {
                         d.execCommand('bold', false);
-                        return;
                     },
                     'italic' : function () {
                         d.execCommand('italic', false);
-                        return;
                     },
                     'ul' : function () { dispatchTable.list('UL'); },
                     'ol' : function () { dispatchTable.list('OL'); },
@@ -288,7 +279,6 @@ function Editor(selector, opts) {
                         } else {
                             d.execCommand('formatBlock', false, 'blockquote');
                         }
-                        return;
                     },
                     'h1' : function () { dispatchTable.heading('H1'); },
                     'h2' : function () { dispatchTable.heading('H2'); },
@@ -309,8 +299,6 @@ function Editor(selector, opts) {
                         } else {
                             d.execCommand('formatBlock', false, h);
                         }
-                        
-                        return;
                     },
                     'list' : function (listType) {
                         var parentNodes = self.findParentNodes(self.selection.anchorNode),
@@ -321,18 +309,13 @@ function Editor(selector, opts) {
                             endNode,
                             incompatibles = incompatibleElements[listType];
                         
-                        //get outer node
-                        //log(self.selection.anchorNode.parentNode);
-                        //startNode
                         startNode = self.selection.anchorNode.parentNode;
-                        //endNode
                         endNode = self.selection.focusNode.parentNode;
                         
                         if (!!parentNodes[listType]) {
                             d.execCommand('formatBlock', false, 'p');
                             d.execCommand('outdent');
                         } else {
-                            //remove elements we don't want mixing...
                             removeIncompatibles(parentNodes, incompatibles);
                             
                             if (listType === 'UL') {
@@ -341,19 +324,17 @@ function Editor(selector, opts) {
                                 d.execCommand('insertorderedlist', false);
                             }
                         }
-                        return;
                     }
                 };
             self.savedSelection = toolkit.saveSelection(self.liveElement);
-            toolkit.restoreSelection(self.liveElement, self.savedSelection);
             dispatchTable[c]();
-            self.cleanUp();
+            if (self.isBlockStyle(c)) {
+                self.cleanUp();
+            }
+            toolkit.restoreSelection(self.liveElement, self.savedSelection);
             
-            //update UI button states
-            self.updateButtonState();
-            //reselect if seleciton has failed (see adding list style)
-            //reposition UI
-            self.placeUI();
+            self.updateButtonState()
+                .placeUI();
             
             return this;
         },
@@ -425,7 +406,7 @@ function Editor(selector, opts) {
                         if (range.startOffset === 0) {
                             self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
                         } else {
-                            if (currentNode.nextElementSibling != null && currentNode.nextSibling.nodeName !== 'HR') {
+                            if (currentNode.nextElementSibling !== null && currentNode.nextSibling.nodeName !== 'HR') {
                                 self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode.nextSibling);
                             }
                         }
@@ -433,7 +414,7 @@ function Editor(selector, opts) {
                     
                 }
             }
-            
+            return self;
         },
         backspaceHandler : function (e) {
             var previousNode, previousHTML, currentNode, currentHTML, replacement, savedSelection, replacementName,
@@ -459,25 +440,13 @@ function Editor(selector, opts) {
                 
                 toolkit.restoreSelection(replacement, savedSelection);
             }
+            
+            return self;
         },
         bindSelect : function () {
             var self = this,
                 i,
                 l = this.elements.length,
-                keyDown = function (e) {
-                    if (e.keyCode === 13) {
-                        self.enterHandler(e);
-                    } else {
-                        if (e.keyCode === 8) {
-                            self.backspaceHandler(e);
-                        }
-                    }
-                },
-                keyUp = function (e) {
-                    if (e.keyCode === 8 || e.keyCode === 46) {
-                        self.cleanUp();
-                    }
-                },
                 checkForHighlight = function (e) {
                     self.selection = w.getSelection();
                     self.liveElement = this;
@@ -490,6 +459,22 @@ function Editor(selector, opts) {
                     } else {
                         self.hideUI();
                     }
+                },
+                keyDown = function (e) {
+                    if (e.keyCode === 13) {
+                        self.enterHandler(e);
+                    } else {
+                        if (e.keyCode === 8) {
+                            self.backspaceHandler(e);
+                        }
+                    }
+                    checkForHighlight.call(this);
+                },
+                keyUp = function (e) {
+                    if (e.keyCode === 8 || e.keyCode === 46) {
+                        self.cleanUp();
+                    }
+                    checkForHighlight.call(this);
                 };
             
             for (i = 0; i < l; i += 1) {
@@ -517,7 +502,7 @@ function Editor(selector, opts) {
             this.defaults = toolkit.extend(this.defaults, opts);
             
             //set elements based on selector
-            this.elements = document.querySelectorAll(selector);
+            this.elements = d.querySelectorAll(selector);
             if (this.elements.length === 0) {
                 return;
             }
