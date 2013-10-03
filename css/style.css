@@ -82,7 +82,7 @@ p {font-size:1.4em;line-height:1.4em}
 }
 
 a {
-	text-decoration: none;
+	text-decoration: underline;
 	color: deepskyblue;
 }
 

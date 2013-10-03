@@ -332,13 +332,18 @@ function Editor(selector, opts) {
                             }
                         }
                     },
-                    'link' : function () {
-                        var timer;
+                    'a' : function () {
+                        var parentNodes = self.findParentNodes(self.selection.anchorNode);
                         self.linkMode = true;
-                        self.gui.className = self.gui.className + " link-mode";
-                        w.setTimeout(function () {
-                            d.getElementById('editor-link-field').focus();
-                        }, 500);
+                        
+                        if (parentNodes.A) {
+                            self.cancelLink();
+                        } else {
+                            self.gui.className = self.gui.className + " link-mode";
+                            w.setTimeout(function () {
+                                d.getElementById('editor-link-field').focus();
+                            }, 500);
+                        }
                     }
                 };
             self.savedSelection = toolkit.selection.saveSelection(self.liveElement);
@@ -353,6 +358,23 @@ function Editor(selector, opts) {
             
             return this;
         },
+        addLink : function () {
+            var self = this,
+                linkField = d.getElementById('editor-link-field'),
+                url = linkField.value;
+            toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
+            document.execCommand('unlink', false);
+            
+            //TO DO TRIM WHITESPACE FROM RANGE
+            if (url.trim() !== "") {
+                if (!url.match("^(http|https)://")) {
+                    url = "http://" + url;
+                }
+                d.execCommand('createLink', false, url);
+            }
+            self.exitLinkMode();
+            
+        },
         cancelLink : function () {
             var self = this,
                 parentNodes;
@@ -361,8 +383,16 @@ function Editor(selector, opts) {
             parentNodes = self.findParentNodes(self.selection.anchorNode);
             
             if (parentNodes.A) {
-                self.removeNode(parentNodes.A);
+                document.execCommand('unlink', false);
             }
+            
+            self.exitLinkMode();
+        },
+        exitLinkMode : function () {
+            var self = this;
+            
+            self.linkMode = false;
+            d.getElementById('editor-link-field').value = '';
             
             self.selection.collapse();
             self.gui.className.replace(/link-mode/g, '').replace(/\s{2}/g, ' ');
@@ -471,18 +501,16 @@ function Editor(selector, opts) {
             
             return self;
         },
-        bindSelect : function () {
+        initListeners : function () {
             var self = this,
                 cancelBtn,
                 i,
                 l = this.elements.length,
-                checkForHighlight = function (e) {
+                highlightListener = function (e) {
+                    var me = this;
                     w.setTimeout(function () {
-                   
                         self.selection = w.getSelection();
-                        self.liveElement = this;
-                        
-                        //log('checkForHight: ' + self.linkMode);
+                        self.liveElement = me;
                         
                         if (self.selection.isCollapsed === false) {
                             //show editor
@@ -493,7 +521,7 @@ function Editor(selector, opts) {
                         }
                     }, 1);
                 },
-                keyDown = function (e) {
+                keyDownListener = function (e) {
                     if (e.keyCode === 13) {
                         self.enterHandler(e);
                     } else {
@@ -501,20 +529,29 @@ function Editor(selector, opts) {
                             self.backspaceHandler(e);
                         }
                     }
-                    checkForHighlight.call(this);
+                    highlightListener.call(this);
                 },
-                keyUp = function (e) {
+                keyUpListener = function (e) {
                     if (e.keyCode === 8 || e.keyCode === 46) {
                         self.cleanUp();
                     }
-                    checkForHighlight.call(this);
+                    highlightListener.call(this);
+                },
+                linkInputListener = function (e) {
+                    if (e.keyCode === 13) {
+                        e.preventDefault();
+                        self.addLink();
+                    }
                 };
             
             for (i = 0; i < l; i += 1) {
-                toolkit.on(this.elements[i], 'mouseup', checkForHighlight);
-                toolkit.on(this.elements[i], 'keydown', keyDown);
-                toolkit.on(this.elements[i], 'keyup', keyUp);
+                toolkit.on(this.elements[i], 'mouseup', highlightListener);
+                toolkit.on(this.elements[i], 'keydown', keyDownListener);
+                toolkit.on(this.elements[i], 'keyup', keyUpListener);
             }
+            
+            toolkit.on(d.getElementById('editor-link-field'), 'keydown', linkInputListener);
+            
             return this;
         },
         initEditableElements : function (selector) {
@@ -545,7 +582,7 @@ function Editor(selector, opts) {
             
             return this.initEditableElements(selector)
                        //.initButtons()
-                       .bindSelect()
+                       .initListeners()
                        .bindUI();
         }
     };
