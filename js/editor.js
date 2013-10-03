@@ -3,7 +3,7 @@
  *  @name       editor
  *  @date       Oct 2013
  *  @by         mjbp
- *  @roadmap    - add link support
+ *  @roadmap    - refine link support
                 - fix UI positioning
                 - add configuration options (including color/bgColor of UI) / limit options on headers
                 - paste without styles (remove)
@@ -374,7 +374,7 @@ function Editor(selector, opts) {
             toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
             document.execCommand('unlink', false);
             
-            //TO DO TRIM WHITESPACE FROM RANGE
+            //TRIM WHITESPACE FROM RANGE
             if (url.trim() !== "") {
                 if (!url.match("^(http|https)://")) {
                     url = "http://" + url;
