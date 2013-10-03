@@ -1,11 +1,13 @@
 /*global window, document, console */
 /*!
- *  @name   editor
- *  @date   Sept 2013
- *  @by     mjbp
- *  @todo   - add link support
-            - add configuration options (including color/bgColor of UI) / limit options on headers
-            - paste without styles (remove)
+ *  @name       editor
+ *  @date       Oct 2013
+ *  @by         mjbp
+ *  @roadmap    - add link support
+                - fix UI positioning
+                - add configuration options (including color/bgColor of UI) / limit options on headers
+                - paste without styles (remove)
+                - IE9
  */
 
 function log(w) {
@@ -343,6 +345,7 @@ function Editor(selector, opts) {
                             w.setTimeout(function () {
                                 d.getElementById('editor-link-field').focus();
                             }, 500);
+                            self.addLink();
                         }
                     }
                 };
@@ -359,6 +362,12 @@ function Editor(selector, opts) {
             return this;
         },
         addLink : function () {
+            //toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
+            
+            d.execCommand('unlink', false);
+            d.execCommand('createLink', false, '/');
+        },
+        addHref : function () {
             var self = this,
                 linkField = d.getElementById('editor-link-field'),
                 url = linkField.value;
@@ -373,18 +382,14 @@ function Editor(selector, opts) {
                 d.execCommand('createLink', false, url);
             }
             self.exitLinkMode();
-            
         },
         cancelLink : function () {
             var self = this,
                 parentNodes;
             toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
             self.selection = w.getSelection();
-            parentNodes = self.findParentNodes(self.selection.anchorNode);
             
-            if (parentNodes.A) {
-                document.execCommand('unlink', false);
-            }
+            document.execCommand('unlink', false);
             
             self.exitLinkMode();
         },
@@ -394,7 +399,9 @@ function Editor(selector, opts) {
             self.linkMode = false;
             d.getElementById('editor-link-field').value = '';
             
-            self.selection.collapse();
+            toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
+            
+            self.selection.getRangeAt(0).collapse(false);
             self.gui.className.replace(/link-mode/g, '').replace(/\s{2}/g, ' ');
             d.getElementById('editor-link-field').blur();
             self.hideUI();
@@ -540,7 +547,7 @@ function Editor(selector, opts) {
                 linkInputListener = function (e) {
                     if (e.keyCode === 13) {
                         e.preventDefault();
-                        self.addLink();
+                        self.addHref();
                     }
                 };
             
