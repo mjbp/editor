@@ -50,60 +50,62 @@ function Editor(selector, opts) {
                 element.attachEvent('on' + event, fn);
             }
         },/* next functions courteousy of Tim Down, taken from Stack Overflow */
-        saveSelection : function (containerEl) {
-            var start,
-                range = window.getSelection().getRangeAt(0),
-                preSelectionRange = range.cloneRange();
-            
-            preSelectionRange.selectNodeContents(containerEl);
-            preSelectionRange.setEnd(range.startContainer, range.startOffset);
-            start = preSelectionRange.toString().length;
-
-            return {
-                start: start,
-                end: start + range.toString().length
-            };
-        },
-        restoreSelection : function (containerEl, savedSel) {
-            var i,
-                sel,
-                charIndex = 0,
-                range = document.createRange(),
-                nodeStack = [containerEl],
-                node,
-                nextCharIndex,
-                result,
-                foundStart = false,
-                stop = false;
-            range.setStart(containerEl, 0);
-            range.collapse(true);
-    
-            while (!stop) {
-                node = nodeStack.pop();
-                if (node.nodeType === 3) {
-                    nextCharIndex = charIndex + node.length;
-                    if (!foundStart && savedSel.start >= charIndex && savedSel.start <= nextCharIndex) {
-                        range.setStart(node, savedSel.start - charIndex);
-                        foundStart = true;
-                    }
-                    if (foundStart && savedSel.end >= charIndex && savedSel.end <= nextCharIndex) {
-                        range.setEnd(node, savedSel.end - charIndex);
-                        stop = true;
-                    }
-                    charIndex = nextCharIndex;
-                } else {
-                    i = node.childNodes.length;
-                    while (i >= 0) {
-                        nodeStack.push(node.childNodes[i]);
-                        i -= 1;
-                    }
-                }
+        selection : {
+            saveSelection : function (containerEl) {
+                var start,
+                    range = window.getSelection().getRangeAt(0),
+                    preSelectionRange = range.cloneRange();
                 
-            }
+                preSelectionRange.selectNodeContents(containerEl);
+                preSelectionRange.setEnd(range.startContainer, range.startOffset);
+                start = preSelectionRange.toString().length;
     
-            sel = window.getSelection();
-            sel.removeAllRanges();
-            result = sel.addRange(range);
+                return {
+                    start: start,
+                    end: start + range.toString().length
+                };
+            },
+            restoreSelection : function (containerEl, savedSel) {
+                var i,
+                    sel,
+                    charIndex = 0,
+                    range = document.createRange(),
+                    nodeStack = [containerEl],
+                    node,
+                    nextCharIndex,
+                    result,
+                    foundStart = false,
+                    stop = false;
+                range.setStart(containerEl, 0);
+                range.collapse(true);
+        
+                while (!stop) {
+                    node = nodeStack.pop();
+                    if (node.nodeType === 3) {
+                        nextCharIndex = charIndex + node.length;
+                        if (!foundStart && savedSel.start >= charIndex && savedSel.start <= nextCharIndex) {
+                            range.setStart(node, savedSel.start - charIndex);
+                            foundStart = true;
+                        }
+                        if (foundStart && savedSel.end >= charIndex && savedSel.end <= nextCharIndex) {
+                            range.setEnd(node, savedSel.end - charIndex);
+                            stop = true;
+                        }
+                        charIndex = nextCharIndex;
+                    } else {
+                        i = node.childNodes.length;
+                        while (i >= 0) {
+                            nodeStack.push(node.childNodes[i]);
+                            i -= 1;
+                        }
+                    }
+                    
+                }
+        
+                sel = window.getSelection();
+                sel.removeAllRanges();
+                result = sel.addRange(range);
+            }
         }
     };
     
@@ -170,8 +172,11 @@ function Editor(selector, opts) {
                     var command = this.getAttribute('data-command');
                     e.preventDefault();
                     e.stopPropagation();
-                    
-                    self.executeStyle(command);
+                    if (this.id === 'editor-cancel-button') {
+                        self.cancelLink();
+                    } else {
+                        self.executeStyle(command);
+                    }
                 };
             for (i = 0; i < buttons.length; i += 1) {
                 toolkit.on(buttons[i], 'click', buttonTrigger);
@@ -329,23 +334,40 @@ function Editor(selector, opts) {
                     },
                     'link' : function () {
                         var timer;
+                        self.linkMode = true;
                         self.gui.className = self.gui.className + " link-mode";
                         w.setTimeout(function () {
                             d.getElementById('editor-link-field').focus();
                         }, 500);
                     }
                 };
-            self.savedSelection = toolkit.saveSelection(self.liveElement);
+            self.savedSelection = toolkit.selection.saveSelection(self.liveElement);
             dispatchTable[c]();
             if (self.isBlockStyle(c)) {
                 self.cleanUp();
             }
-            toolkit.restoreSelection(self.liveElement, self.savedSelection);
+            toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
             
             self.updateButtonState()
                 .placeUI();
             
             return this;
+        },
+        cancelLink : function () {
+            var self = this,
+                parentNodes;
+            toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
+            self.selection = w.getSelection();
+            parentNodes = self.findParentNodes(self.selection.anchorNode);
+            
+            if (parentNodes.A) {
+                self.removeNode(parentNodes.A);
+            }
+            
+            self.selection.collapse();
+            self.gui.className.replace(/link-mode/g, '').replace(/\s{2}/g, ' ');
+            d.getElementById('editor-link-field').blur();
+            self.hideUI();
         },
         removeNode : function (node) {
             var self = this,
@@ -438,13 +460,13 @@ function Editor(selector, opts) {
                 
                 e.preventDefault();
                 
-                savedSelection = toolkit.saveSelection(previousNode);
+                savedSelection = toolkit.selection.saveSelection(previousNode);
                 
                 replacement.innerHTML = previousHTML + currentHTML;
                 currentNode.parentNode.removeChild(currentNode);
                 previousNode.parentNode.replaceChild(replacement, previousNode);
                 
-                toolkit.restoreSelection(replacement, savedSelection);
+                toolkit.selection.restoreSelection(replacement, savedSelection);
             }
             
             return self;
@@ -455,16 +477,21 @@ function Editor(selector, opts) {
                 i,
                 l = this.elements.length,
                 checkForHighlight = function (e) {
-                    self.selection = w.getSelection();
-                    self.liveElement = this;
-                    
-                    if (self.selection.isCollapsed === false) {
-                        //show editor
-                        self.updateButtonState();
-                        self.showUI();
-                    } else {
-                        self.hideUI();
-                    }
+                    w.setTimeout(function () {
+                   
+                        self.selection = w.getSelection();
+                        self.liveElement = this;
+                        
+                        //log('checkForHight: ' + self.linkMode);
+                        
+                        if (self.selection.isCollapsed === false) {
+                            //show editor
+                            self.updateButtonState();
+                            self.showUI();
+                        } else {
+                            self.hideUI();
+                        }
+                    }, 1);
                 },
                 keyDown = function (e) {
                     if (e.keyCode === 13) {
@@ -481,10 +508,6 @@ function Editor(selector, opts) {
                         self.cleanUp();
                     }
                     checkForHighlight.call(this);
-                },
-                cancelLink = function () {
-                    self.gui.className.replace(/link-mode/g, '').replace(/\s{2}/g, ' ');
-                    d.getElementById('editor-link-field').blur();
                 };
             
             for (i = 0; i < l; i += 1) {
@@ -518,6 +541,7 @@ function Editor(selector, opts) {
             }
             
             this.gui = d.getElementById('editor');
+            this.linkMode = false;
             
             return this.initEditableElements(selector)
                        //.initButtons()
