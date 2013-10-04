@@ -473,7 +473,33 @@ function Editor(selector, opts) {
                 nextNode = range.endContainer.parentNode.nextSibling ? range.endContainer.parentNode.nextSibling.nodeName : undefined;
                 
                 // here be dragons
-                
+                /* Medium adds an HR and places the cursor after it whenever you hit enter twice in a row
+                 * Regardless of siblings.
+                 * It assumes writing rather than editing, so this is what we shall do
+                 */
+                if (range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) {
+                    log('nextElement: ' + nextElement);
+                    log('nextNode: ' + nextNode);
+                    log('currentNode: ' + currentNode.nodeName);
+                    log('prevElement: ' + previousElement);
+                    log('prevNode: ' + previousNode);
+                    log('prevprevEl: ' + previousNode.previousSibling);
+                    
+                    if (currentNode === self.liveElement && nextElement === undefined) {
+                        e.preventDefault();
+                        self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
+                    } else {
+                        //only in a P and don't stack HRs
+                        if (range.startContainer.parentNode.nodeName === 'P' && previousElement !== 'HR' && nextElement !== 'HR') {
+                            if (range.startOffset === 0) {
+                                e.preventDefault();
+                                self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
+                            }
+                        }
+                    }
+                    
+                    /*
+                    //previous effort, trying to do everything...
                     if (currentNode === self.liveElement && nextElement === undefined) {
                         e.preventDefault();
                         
@@ -490,7 +516,7 @@ function Editor(selector, opts) {
                                 }
                             }
                         }
-                    }
+                    }*/
                     
                 }
             }
