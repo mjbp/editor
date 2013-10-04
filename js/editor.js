@@ -98,10 +98,12 @@ function Editor(selector, opts) {
                         }
                         charIndex = nextCharIndex;
                     } else {
-                        i = node.childNodes.length;
-                        while (i >= 0) {
-                            nodeStack.push(node.childNodes[i]);
-                            i -= 1;
+                        if (node !== undefined) {
+                            i = node.childNodes.length;
+                            while (i >= 0) {
+                                nodeStack.push(node.childNodes[i]);
+                                i -= 1;
+                            }
                         }
                     }
                     
@@ -110,6 +112,14 @@ function Editor(selector, opts) {
                 sel = w.getSelection();
                 sel.removeAllRanges();
                 result = sel.addRange(range);
+            },
+            atEndOfNode : function (range) {
+                var restOfNode,
+                    postRange = d.createRange();
+                postRange.selectNodeContents(range.endContainer);
+                postRange.setStart(range.endContainer, range.endOffset);
+                restOfNode = postRange.cloneContents().textContent.length;
+                return restOfNode === 0 ? true : false;
             }
         }
     };
@@ -118,7 +128,7 @@ function Editor(selector, opts) {
     Editor.prototype = {
         defaults: {
             delay: 0,
-            buttons: ['b', 'i', 'ul', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'cancel'],
+            buttons: ['b', 'i', 'blockquote', 'ul', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'cancel'],
             toolBarBgColor: '0, 0, 0',
             toolBarBtnColor: '255, 255, 255'
         },
@@ -449,35 +459,35 @@ function Editor(selector, opts) {
             return parentNodes.LI;
         },
         enterHandler : function (e) {
-            var self = this,
-                range,
-                endTester,
-                postRange,
-                rangeParent,
-                previousNode,
-                currentNode;
+            var range, endTester, postRange, rangeParent, previousNode, previousElement, currentNode, nextNode, nextElement,
+                self = this;
             
             if (!!self.isList()) {
                 self.cleanUp();
             } else {
                 range = self.selection.getRangeAt(0);
-                previousNode = range.startContainer.parentNode.previousSibling;
+                previousElement = range.startContainer.parentNode.previousElementSibling ? range.startContainer.parentNode.previousElementSibling.nodeName : undefined;
+                previousNode = range.startContainer.parentNode.previousSibling ? range.startContainer.parentNode.previousSibling.nodeName : undefined;
                 currentNode = range.startContainer.parentNode;
+                nextElement = range.endContainer.parentNode.nextElementSibling ? range.endContainer.parentNode.nextElementSibling.nodeName : undefined;
+                nextNode = range.endContainer.parentNode.nextSibling ? range.endContainer.parentNode.nextSibling.nodeName : undefined;
                 
-                //check if were a the end of a node
-                postRange = d.createRange();
-                postRange.selectNodeContents(range.endContainer);
-                postRange.setStart(range.endContainer, range.endOffset);
-                endTester = postRange.cloneContents();
+                // here be dragons
                 
-                if (range.startOffset === 0 || endTester.textContent.length === 0) {
-                    e.preventDefault();
-                    if (range.startContainer.parentNode.nodeName === 'P' && previousNode.nodeName !== 'HR') {
-                        if (range.startOffset === 0) {
-                            self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
-                        } else {
-                            if (currentNode.nextElementSibling !== null && currentNode.nextSibling.nodeName !== 'HR') {
-                                self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode.nextSibling);
+                    if (currentNode === self.liveElement && nextElement === undefined) {
+                        e.preventDefault();
+                        
+                        self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
+                    } else {
+                        if (range.startContainer.parentNode.nodeName === 'P' && previousElement !== 'HR' && nextElement !== 'HR') {
+                            if (range.startOffset === 0) {
+                                e.preventDefault();
+                                self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
+                            } else {
+                                if (currentNode.nextElementSibling !== null && currentNode.nextSibling.nodeName !== 'HR') {
+                                    e.preventDefault();
+                                    self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode.nextSibling);
+                                }
                             }
                         }
                     }
@@ -492,6 +502,7 @@ function Editor(selector, opts) {
                 range = self.selection.getRangeAt(0);
             
             if (range.startOffset === 0) {
+                log('here');
                 previousNode = range.startContainer.parentNode.previousElementSibling;
                 previousHTML = previousNode.innerHTML;
                 currentNode = range.startContainer.parentNode;
