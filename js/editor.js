@@ -3,10 +3,14 @@
  *  @name       editor
  *  @date       Oct 2013
  *  @by         mjbp
- *  @roadmap    - medium placeHolder text
-                - fix UI positioning
-                - add configuration options (including color/bgColor of UI) / limit options on headers
-                - paste without styles (remove)
+ *  @roadmap    - BUGS
+                    - mid-article HR when HR at end
+                    - hit enter when in heading (chrome), divs appear below -> swap for Ps on cleanUp
+                    - UI positioning / centering and at edges of window
+                    - UI wrapping
+                - medium placeHolder text
+                - add further configuration options including color/bgColor of UI)
+                - paste without styles
                 - trim leading and trailing whitespace when applying inline styles
                 - IE9
                 - leverage localStorage to save amends
@@ -207,6 +211,8 @@ function Editor(selector, opts) {
                 disallowedAttrs = ['class', 'style'],
                 children,
                 elsToFix = {remove : [], swap : []};
+            
+            log('cleaning up...');
             
             children = this.liveElement.getElementsByTagName('*');
             l = children.length;
@@ -485,7 +491,7 @@ function Editor(selector, opts) {
                             self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
                         } else {
                             if (range.startContainer !== self.liveElement.lastElementChild) {
-                                log('here');
+                                log('in mid-article...');
                             }
                         }
                     } else {
@@ -528,7 +534,7 @@ function Editor(selector, opts) {
                 range = self.selection.getRangeAt(0);
             
             if (range.startOffset === 0) {
-                log('here');
+                log('backspacing...');
                 previousNode = range.startContainer.parentNode.previousElementSibling;
                 previousHTML = previousNode.innerHTML;
                 currentNode = range.startContainer.parentNode;
