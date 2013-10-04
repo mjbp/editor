@@ -37,13 +37,15 @@ function Editor(selector, opts) {
             }
             return b;
         },
-        forEach: function (a, fn) {
+        forEach: function (a, fn, scope) {
             var i, l = a.length;
-            if ([].prototype.forEach) {
+            if ([].forEach) {
                 return a.forEach(fn);
             }
             for (i = 0; i < l; i += 1) {
-                fn.call(a[i], i, a);
+                if (a.hasOwnProperty(i)) {
+                    fn.call(scope, a[i], i, a);
+                }
             }
         },
         on : function (element, event, fn) {
@@ -116,7 +118,7 @@ function Editor(selector, opts) {
     Editor.prototype = {
         defaults: {
             delay: 0,
-            styles: ['b', 'i', 'ul', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'],
+            buttons: ['b', 'i', 'ul', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'cancel'],
             toolBarBgColor: '0, 0, 0',
             toolBarBtnColor: '255, 255, 255'
         },
@@ -174,7 +176,7 @@ function Editor(selector, opts) {
                     var command = this.getAttribute('data-command');
                     e.preventDefault();
                     e.stopPropagation();
-                    if (this.id === 'editor-cancel-button') {
+                    if (this.id === 'editor-cancel') {
                         self.cancelLink();
                     } else {
                         self.executeStyle(command);
@@ -574,6 +576,14 @@ function Editor(selector, opts) {
         },
         initButtons : function () {
             //TO DO: templatise and create dynamically
+            var self = this,
+                buttons = [].slice.call(this.gui.getElementsByTagName('button'));
+           
+            toolkit.forEach(buttons, function (key) {
+                if (self.defaults.buttons.indexOf(key.id.replace(/editor-/, '')) === -1) {
+                    key.style.display = 'none';
+                }
+            }, self);
             
             return this;
         },
@@ -591,7 +601,7 @@ function Editor(selector, opts) {
             this.linkMode = false;
             
             return this.initEditableElements(selector)
-                       //.initButtons()
+                       .initButtons()
                        .initListeners()
                        .bindUI();
         }
