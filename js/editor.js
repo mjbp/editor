@@ -3,11 +3,12 @@
  *  @name       editor
  *  @date       Oct 2013
  *  @by         mjbp
- *  @roadmap    - refine link support
-                - fix UI positioning
+ *  @roadmap    - fix UI positioning
                 - add configuration options (including color/bgColor of UI) / limit options on headers
                 - paste without styles (remove)
+                - trim leading and trailing whitespace when applying inline styles
                 - IE9
+                - leverage localStorage to save amends
  */
 
 function log(w) {
@@ -71,7 +72,7 @@ function Editor(selector, opts) {
                 var i,
                     sel,
                     charIndex = 0,
-                    range = document.createRange(),
+                    range = d.createRange(),
                     nodeStack = [containerEl],
                     node,
                     nextCharIndex,
@@ -83,7 +84,7 @@ function Editor(selector, opts) {
         
                 while (!stop) {
                     node = nodeStack.pop();
-                    if (node.nodeType === 3) {
+                    if (node !== undefined && node.nodeType === 3) {
                         nextCharIndex = charIndex + node.length;
                         if (!foundStart && savedSel.start >= charIndex && savedSel.start <= nextCharIndex) {
                             range.setStart(node, savedSel.start - charIndex);
@@ -104,7 +105,7 @@ function Editor(selector, opts) {
                     
                 }
         
-                sel = window.getSelection();
+                sel = w.getSelection();
                 sel.removeAllRanges();
                 result = sel.addRange(range);
             }
@@ -133,7 +134,7 @@ function Editor(selector, opts) {
             return this;
         },
         hideUI : function (self) {
-            this.gui.className.replace(/active/g, '').replace(/\s{2}/g, ' ');
+            this.gui.className = this.gui.className.replace(/active/g, '').replace(/\s{2}/g, ' ');
             this.gui.style.top = "-100px";
             return this;
         },
@@ -154,7 +155,6 @@ function Editor(selector, opts) {
                 l = parentNodes.length;
             
             this.resetButtonState();
-            
             
             for (i in parentNodes) {
                 if (parentNodes.hasOwnProperty(i)) {
@@ -372,7 +372,8 @@ function Editor(selector, opts) {
                 linkField = d.getElementById('editor-link-field'),
                 url = linkField.value;
             toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
-            document.execCommand('unlink', false);
+            
+            d.execCommand('unlink', false);
             
             //TRIM WHITESPACE FROM RANGE
             if (url.trim() !== "") {
@@ -396,15 +397,17 @@ function Editor(selector, opts) {
         exitLinkMode : function () {
             var self = this;
             
-            self.linkMode = false;
             d.getElementById('editor-link-field').value = '';
+            d.getElementById('editor-link-field').blur();
+            
+            self.linkMode = false;
             
             toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
             
             self.selection.getRangeAt(0).collapse(false);
-            self.gui.className.replace(/link-mode/g, '').replace(/\s{2}/g, ' ');
-            d.getElementById('editor-link-field').blur();
-            self.hideUI();
+            this.gui.className = self.gui.className.replace(/link-mode/g, '').replace(/\s{2}/g, ' ');
+            self.updateButtonState();
+            //self.hideUI();
         },
         removeNode : function (node) {
             var self = this,
