@@ -3,7 +3,8 @@
  *  @name       editor
  *  @date       Oct 2013
  *  @by         mjbp
- *  @roadmap    - fix UI positioning
+ *  @roadmap    - medium placeHolder text
+                - fix UI positioning
                 - add configuration options (including color/bgColor of UI) / limit options on headers
                 - paste without styles (remove)
                 - trim leading and trailing whitespace when applying inline styles
@@ -459,7 +460,7 @@ function Editor(selector, opts) {
             return parentNodes.LI;
         },
         enterHandler : function (e) {
-            var range, endTester, postRange, rangeParent, previousNode, previousElement, currentNode, nextNode, nextElement,
+            var range, postRange, rangeParent, previousNode, previousElement, currentNode, nextNode, nextElement,
                 self = this;
             
             if (!!self.isList()) {
@@ -478,16 +479,15 @@ function Editor(selector, opts) {
                  * It assumes writing rather than editing, so this is what we shall do
                  */
                 if (range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) {
-                    log('nextElement: ' + nextElement);
-                    log('nextNode: ' + nextNode);
-                    log('currentNode: ' + currentNode.nodeName);
-                    log('prevElement: ' + previousElement);
-                    log('prevNode: ' + previousNode);
-                    log('prevprevEl: ' + previousNode.previousSibling);
-                    
                     if (currentNode === self.liveElement && nextElement === undefined) {
                         e.preventDefault();
-                        self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
+                        if (self.liveElement.lastElementChild.previousElementSibling.nodeName !== 'HR') {
+                            self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
+                        } else {
+                            if (range.startContainer !== self.liveElement.lastElementChild) {
+                                log('here');
+                            }
+                        }
                     } else {
                         //only in a P and don't stack HRs
                         if (range.startContainer.parentNode.nodeName === 'P' && previousElement !== 'HR' && nextElement !== 'HR') {
