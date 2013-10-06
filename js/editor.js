@@ -487,11 +487,14 @@ function Editor(selector, opts) {
                 if (range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) {
                     if (currentNode === self.liveElement && nextElement === undefined) {
                         e.preventDefault();
+                        //log(self.liveElement.lastElementChild);
                         if (self.liveElement.lastElementChild.previousElementSibling.nodeName !== 'HR') {
                             self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
                         } else {
-                            if (range.startContainer !== self.liveElement.lastElementChild) {
-                                log('in mid-article...');
+                            if (range.startContainer !== self.liveElement.lastElementChild && range.startContainer.nextSibling.textContent.trim() !== '') {
+                                //log(self.liveElement.lastElementChild.previousElementSibling);
+                                //log(range.startContainer.nextSibling);
+                                //self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
                             }
                         }
                     } else {
