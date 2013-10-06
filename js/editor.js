@@ -485,47 +485,60 @@ function Editor(selector, opts) {
                  * It assumes writing rather than editing, so this is what we shall do
                  */
                 if (range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) {
+                    
+                    log('nextNode: ' + nextNode);
+                    log('nextElement: ' + nextElement);
+                    log('currentNode: ' + currentNode);
+                    log('current text: ' + currentNode.textContent);
+                    log('nextNode: ' + nextNode);
+                    log('nextElement: ' + nextElement);
+                    log('rangeOffset: ' + range.startOffset);
+                    
                     if (currentNode === self.liveElement && nextElement === undefined) {
                         e.preventDefault();
-                        //log(self.liveElement.lastElementChild);
+                        self.liveElement.insertBefore(d.createElement('hr'), range.startContainer);
+                    } else {
+                        if (range.startOffset === 0) {
+                            e.preventDefault();
+                            log('here');
+                            self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
+                        } else {
+                            if (currentNode.nodeName === 'P' && nextElement === 'P') {
+                                
+                                //e.preventDefault();
+                                //self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.nextElementSibling);
+                            }
+                        }
+                    }
+                    
+                    /*
+                    
+                    
+                    if (currentNode === self.liveElement && nextElement === undefined) {
+                        e.preventDefault();
                         if (self.liveElement.lastElementChild.previousElementSibling.nodeName !== 'HR') {
                             self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
                         } else {
                             if (range.startContainer !== self.liveElement.lastElementChild && range.startContainer.nextSibling.textContent.trim() !== '') {
                                 //log(self.liveElement.lastElementChild.previousElementSibling);
                                 //log(range.startContainer.nextSibling);
-                                //self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
+                                self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
                             }
                         }
                     } else {
-                        //only in a P and don't stack HRs
-                        if (range.startContainer.parentNode.nodeName === 'P' && previousElement !== 'HR' && nextElement !== 'HR') {
-                            if (range.startOffset === 0) {
-                                e.preventDefault();
-                                self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
-                            }
-                        }
-                    }
-                    
-                    /*
-                    //previous effort, trying to do everything...
-                    if (currentNode === self.liveElement && nextElement === undefined) {
-                        e.preventDefault();
-                        
-                        self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
-                    } else {
-                        if (range.startContainer.parentNode.nodeName === 'P' && previousElement !== 'HR' && nextElement !== 'HR') {
-                            if (range.startOffset === 0) {
-                                e.preventDefault();
-                                self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
-                            } else {
-                                if (currentNode.nextElementSibling !== null && currentNode.nextSibling.nodeName !== 'HR') {
+                        if (previousElement === 'HR') {
+                            e.preventDefault();
+                        } else {
+                            if (range.startContainer.parentNode.nodeName === 'P' && previousElement !== 'HR' && nextElement !== 'HR') {
+                                if (range.startOffset === 0) {
                                     e.preventDefault();
-                                    self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode.nextSibling);
+                                    self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
                                 }
                             }
                         }
-                    }*/
+                        
+                    }
+                    */
                     
                 }
             }
