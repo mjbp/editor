@@ -464,8 +464,12 @@ function Editor(selector, opts) {
             var parentNodes = this.findParentNodes(this.selection.focusNode);
             return parentNodes.LI;
         },
+        isHeading : function (el) {
+            var headings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+            return headings.indexOf(el.toLowerCase()) !== -1 ? true : false;
+        },
         enterHandler : function (e) {
-            var range, postRange, rangeParent, previousNode, previousElement, currentNode, nextNode, nextElement,
+            var range, postRange, rangeParent, previousNode, previousElement, currentNode, nextNode, nextElement, newRange, newEl, sel,
                 self = this;
             
             if (!!self.isList()) {
@@ -478,20 +482,47 @@ function Editor(selector, opts) {
                 nextElement = range.endContainer.parentNode.nextElementSibling ? range.endContainer.parentNode.nextElementSibling.nodeName : undefined;
                 nextNode = range.endContainer.parentNode.nextSibling ? range.endContainer.parentNode.nextSibling.nodeName : undefined;
                 
+                /*
+                log(previousElement);
+                log(previousNode);
+                log(currentNode);
+                */
+                
                 if (range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) {
-                    
-                    if (currentNode === self.liveElement && nextElement === undefined) {
+                    if (self.isHeading(currentNode.nodeName)) {
                         e.preventDefault();
-                        self.liveElement.insertBefore(d.createElement('hr'), range.startContainer);
+                        newEl = d.createElement('p');
+                        newEl.innerHTML = '\u00a0';
+                        
+                        self.liveElement.insertBefore(newEl, currentNode.nextSibling);
+                        
+                        
+                        newRange = d.createRange();
+                        newRange.selectNodeContents(newEl);
+                        
+                        newRange.setStart(newEl, 0);
+                        //newRange.setEnd(newEl, 0);
+                        //newRange.collapse(true);
+                        sel = w.getSelection();
+                        sel.removeAllRanges();
+                        sel.addRange(newRange);
+                        document.execCommand('delete', false, null);                        
+                        
                     } else {
-                        if (range.startOffset === 0) {
+                    
+                        if (currentNode === self.liveElement && nextElement === undefined) {
                             e.preventDefault();
-                            self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
+                            self.liveElement.insertBefore(d.createElement('hr'), range.startContainer);
                         } else {
-                            if (currentNode.nodeName === 'P' && nextElement === 'P') {
-                                
-                                //e.preventDefault();
-                                //self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.nextElementSibling);
+                            if (range.startOffset === 0) {
+                                e.preventDefault();
+                                self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
+                            } else {
+                                if (currentNode.nodeName === 'P' && nextElement === 'P') {
+                                    
+                                    //e.preventDefault();
+                                    //self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.nextElementSibling);
+                                }
                             }
                         }
                     }
