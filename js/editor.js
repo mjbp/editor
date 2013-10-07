@@ -4,7 +4,6 @@
  *  @date       Oct 2013
  *  @by         mjbp
  *  @roadmap    - BUGS
-                    - mid-article HR when HR at end
                     - hit enter when in heading (chrome), divs appear below -> swap for Ps on cleanUp
                     - UI positioning / centering and at edges of window
                     - UI wrapping
@@ -212,7 +211,7 @@ function Editor(selector, opts) {
                 children,
                 elsToFix = {remove : [], swap : []};
             
-            log('cleaning up...');
+            //log('cleaning up...');
             
             children = this.liveElement.getElementsByTagName('*');
             l = children.length;
@@ -501,7 +500,7 @@ function Editor(selector, opts) {
             return self;
         },
         backspaceHandler : function (e) {
-            var previousNode, previousHTML, currentNode, currentHTML, replacement, savedSelection, replacementName, sel, newRange,
+            var previousNode, previousHTML, currentNode, currentHTML, replacement, savedSelection, replacementName, sel, newRange, newP,
                 self = this,
                 range = self.selection.getRangeAt(0),
                 prevPrevNode;
@@ -513,8 +512,9 @@ function Editor(selector, opts) {
                 currentNode = range.startContainer.parentNode;
                 currentHTML = currentNode.innerHTML;
                 
-                prevPrevNode = range.startContainer.previousElementSibling.previousElementSibling;
-                
+                if (range.startContainer.previousElementSibling) {
+                    prevPrevNode = range.startContainer.previousElementSibling.previousElementSibling || undefined;
+                }
                 if (currentNode !== self.liveElement) {
                     savedSelection = toolkit.selection.saveSelection(previousNode);
                     replacementName = previousNode.nodeName === 'HR' ? 'p' : previousNode.nodeName.toLowerCase();
@@ -522,7 +522,6 @@ function Editor(selector, opts) {
                     replacement = d.createElement(replacementName);
                     
                     e.preventDefault();
-                    
                     
                     replacement.innerHTML = previousHTML + currentHTML;
                     currentNode.parentNode.removeChild(currentNode);
@@ -532,17 +531,22 @@ function Editor(selector, opts) {
                 } else {
                     if (range.startContainer.previousElementSibling.nodeName === 'HR') {
                         e.preventDefault();
+                        
                         self.removeNode(range.startContainer.previousElementSibling);
                         newRange = d.createRange();
+                        
                         newRange.selectNodeContents(prevPrevNode);
                         newRange.collapse(false);
                         sel = w.getSelection();
                         sel.removeAllRanges();
                         sel.addRange(newRange);
+                        
+                        
                     
                     } else {
-                        savedSelection = toolkit.selection.saveSelection(previousNode);
-                        toolkit.selection.restoreSelection(currentNode, savedSelection);
+                        e.preventDefault();
+                        savedSelection = toolkit.selection.saveSelection(range.startContainer.previousElementSibling);
+                        toolkit.selection.restoreSelection(range.startContainer.previousElementSibling, savedSelection);
                     }
                 }
             }
