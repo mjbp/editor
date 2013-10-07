@@ -501,7 +501,7 @@ function Editor(selector, opts) {
             return self;
         },
         backspaceHandler : function (e) {
-            var previousNode, previousHTML, currentNode, currentHTML, replacement, savedSelection, replacementName,
+            var previousNode, previousHTML, currentNode, currentHTML, replacement, savedSelection, replacementName, sel, newRange,
                 self = this,
                 range = self.selection.getRangeAt(0),
                 prevPrevNode;
@@ -513,7 +513,6 @@ function Editor(selector, opts) {
                 currentNode = range.startContainer.parentNode;
                 currentHTML = currentNode.innerHTML;
                 
-                log(range.startContainer.previousElementSibling.previousElementSibling);
                 prevPrevNode = range.startContainer.previousElementSibling.previousElementSibling;
                 
                 if (currentNode !== self.liveElement) {
@@ -532,18 +531,14 @@ function Editor(selector, opts) {
 
                 } else {
                     if (range.startContainer.previousElementSibling.nodeName === 'HR') {
-                        //put at the end of previous node
-                        //range.startContainer.previousElementSibling.nodeName
                         e.preventDefault();
                         self.removeNode(range.startContainer.previousElementSibling);
-                        var sel,
-                            newrange = d.createRange();
-                        //newrange.setStart(prevPrevNode, 0);
-                        newrange.selectNodeContents(prevPrevNode);
-                        newrange.collapse(false);
+                        newRange = d.createRange();
+                        newRange.selectNodeContents(prevPrevNode);
+                        newRange.collapse(false);
                         sel = w.getSelection();
                         sel.removeAllRanges();
-                        sel.addRange(newrange);
+                        sel.addRange(newRange);
                     
                     } else {
                         savedSelection = toolkit.selection.saveSelection(previousNode);
