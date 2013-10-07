@@ -479,20 +479,7 @@ function Editor(selector, opts) {
                 nextElement = range.endContainer.parentNode.nextElementSibling ? range.endContainer.parentNode.nextElementSibling.nodeName : undefined;
                 nextNode = range.endContainer.parentNode.nextSibling ? range.endContainer.parentNode.nextSibling.nodeName : undefined;
                 
-                // here be dragons
-                /* Medium adds an HR and places the cursor after it whenever you hit enter twice in a row
-                 * Regardless of siblings.
-                 * It assumes writing rather than editing, so this is what we shall do
-                 */
                 if (range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) {
-                    
-                    log('nextNode: ' + nextNode);
-                    log('nextElement: ' + nextElement);
-                    log('currentNode: ' + currentNode);
-                    log('current text: ' + currentNode.textContent);
-                    log('nextNode: ' + nextNode);
-                    log('nextElement: ' + nextElement);
-                    log('rangeOffset: ' + range.startOffset);
                     
                     if (currentNode === self.liveElement && nextElement === undefined) {
                         e.preventDefault();
@@ -500,7 +487,6 @@ function Editor(selector, opts) {
                     } else {
                         if (range.startOffset === 0) {
                             e.preventDefault();
-                            log('here');
                             self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
                         } else {
                             if (currentNode.nodeName === 'P' && nextElement === 'P') {
@@ -510,36 +496,6 @@ function Editor(selector, opts) {
                             }
                         }
                     }
-                    
-                    /*
-                    
-                    
-                    if (currentNode === self.liveElement && nextElement === undefined) {
-                        e.preventDefault();
-                        if (self.liveElement.lastElementChild.previousElementSibling.nodeName !== 'HR') {
-                            self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
-                        } else {
-                            if (range.startContainer !== self.liveElement.lastElementChild && range.startContainer.nextSibling.textContent.trim() !== '') {
-                                //log(self.liveElement.lastElementChild.previousElementSibling);
-                                //log(range.startContainer.nextSibling);
-                                self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.lastElementChild);
-                            }
-                        }
-                    } else {
-                        if (previousElement === 'HR') {
-                            e.preventDefault();
-                        } else {
-                            if (range.startContainer.parentNode.nodeName === 'P' && previousElement !== 'HR' && nextElement !== 'HR') {
-                                if (range.startOffset === 0) {
-                                    e.preventDefault();
-                                    self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
-                                }
-                            }
-                        }
-                        
-                    }
-                    */
-                    
                 }
             }
             return self;
@@ -547,27 +503,53 @@ function Editor(selector, opts) {
         backspaceHandler : function (e) {
             var previousNode, previousHTML, currentNode, currentHTML, replacement, savedSelection, replacementName,
                 self = this,
-                range = self.selection.getRangeAt(0);
+                range = self.selection.getRangeAt(0),
+                prevPrevNode;
+                
             
             if (range.startOffset === 0) {
-                log('backspacing...');
                 previousNode = range.startContainer.parentNode.previousElementSibling;
                 previousHTML = previousNode.innerHTML;
                 currentNode = range.startContainer.parentNode;
                 currentHTML = currentNode.innerHTML;
-                replacementName = previousNode.nodeName === 'HR' ? 'p' : previousNode.nodeName.toLowerCase();
                 
-                replacement = d.createElement(replacementName);
+                log(range.startContainer.previousElementSibling.previousElementSibling);
+                prevPrevNode = range.startContainer.previousElementSibling.previousElementSibling;
                 
-                e.preventDefault();
-                
-                savedSelection = toolkit.selection.saveSelection(previousNode);
-                
-                replacement.innerHTML = previousHTML + currentHTML;
-                currentNode.parentNode.removeChild(currentNode);
-                previousNode.parentNode.replaceChild(replacement, previousNode);
-                
-                toolkit.selection.restoreSelection(replacement, savedSelection);
+                if (currentNode !== self.liveElement) {
+                    savedSelection = toolkit.selection.saveSelection(previousNode);
+                    replacementName = previousNode.nodeName === 'HR' ? 'p' : previousNode.nodeName.toLowerCase();
+                    
+                    replacement = d.createElement(replacementName);
+                    
+                    e.preventDefault();
+                    
+                    
+                    replacement.innerHTML = previousHTML + currentHTML;
+                    currentNode.parentNode.removeChild(currentNode);
+                    previousNode.parentNode.replaceChild(replacement, previousNode);
+                    toolkit.selection.restoreSelection(replacement, savedSelection);
+
+                } else {
+                    if (range.startContainer.previousElementSibling.nodeName === 'HR') {
+                        //put at the end of previous node
+                        //range.startContainer.previousElementSibling.nodeName
+                        e.preventDefault();
+                        self.removeNode(range.startContainer.previousElementSibling);
+                        var sel,
+                            newrange = d.createRange();
+                        //newrange.setStart(prevPrevNode, 0);
+                        newrange.selectNodeContents(prevPrevNode);
+                        newrange.collapse(false);
+                        sel = w.getSelection();
+                        sel.removeAllRanges();
+                        sel.addRange(newrange);
+                    
+                    } else {
+                        savedSelection = toolkit.selection.saveSelection(previousNode);
+                        toolkit.selection.restoreSelection(currentNode, savedSelection);
+                    }
+                }
             }
             
             return self;

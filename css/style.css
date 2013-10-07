@@ -72,7 +72,9 @@ h3 {font-size:1.6em;}
 h4 {font-size:1.5em;}
 h5 {font-size:1.4em;}
 h6 {font-size:1.3em;}
-p {font-size:1.2em;line-height:1.5em;margin-bottom:1.5em;}
+p,
+li {font-size:1.2em;line-height:1.5em;}
+ol, ul, p {margin-bottom:1.5em;}
 
 hr {display: block;width: 20%;margin: 40px auto 40px auto;border: 1px solid #dededc;}
 
