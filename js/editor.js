@@ -213,49 +213,50 @@ function Editor(selector, opts) {
             
             //log('cleaning up...');
             
-            children = this.liveElement.getElementsByTagName('*');
-            l = children.length;
-            
-            for (i = 0; i < l; i += 1) {
-                child = children[i];
-                //log(child);
-                child.normalize();
+            if (this.liveElement !== undefined) {
+                children = this.liveElement.getElementsByTagName('*');
+                l = children.length;
                 
-                 //remove unwanted attributes
-                for (j = 0; j < disallowedAttrs.length; j += 1) {
-                    if (child.hasAttribute(disallowedAttrs[j])) {
-                        child.removeAttribute(disallowedAttrs[j]);
-                    }
-                }
-                //check if empty/whitespace-only and flag as unwanted
-                if (/^\s*$/.test(child.textContent) && child.nodeName !== 'HR') {
-                    elsToFix.remove.push(child);
-                } else {
-                    //flag unwanted nodes
-                    for (k = 0; k < disallowedEls.length; k += 1) {
-                        if (disallowedEls[k] === child.tagName) {
-                            elsToFix.remove.push(child);
+                for (i = 0; i < l; i += 1) {
+                    child = children[i];
+                    //log(child);
+                    child.normalize();
+                    
+                     //remove unwanted attributes
+                    for (j = 0; j < disallowedAttrs.length; j += 1) {
+                        if (child.hasAttribute(disallowedAttrs[j])) {
+                            child.removeAttribute(disallowedAttrs[j]);
                         }
                     }
-                    //check for orphaned LIs
-                    if (child.nodeName === 'LI' && (child.parentNode.nodeName !== 'UL' && child.parentNode.nodeName !== 'OL')) {
-                        //log(child.parentNode);
-                        elsToFix.swap.push(child);
+                    //check if empty/whitespace-only and flag as unwanted
+                    if (/^\s*$/.test(child.textContent) && child.nodeName !== 'HR') {
+                        elsToFix.remove.push(child);
+                    } else {
+                        //flag unwanted nodes
+                        for (k = 0; k < disallowedEls.length; k += 1) {
+                            if (disallowedEls[k] === child.tagName) {
+                                elsToFix.remove.push(child);
+                            }
+                        }
+                        //check for orphaned LIs
+                        if (child.nodeName === 'LI' && (child.parentNode.nodeName !== 'UL' && child.parentNode.nodeName !== 'OL')) {
+                            //log(child.parentNode);
+                            elsToFix.swap.push(child);
+                        }
+                    }
+                }
+                //remove unwanted
+                if (elsToFix.remove.length) {
+                    for (i = 0; i < elsToFix.remove.length; i += 1) {
+                        self.removeNode(elsToFix.remove[i]);
+                    }
+                }
+                if (elsToFix.swap.length) {
+                    for (i = 0; i < elsToFix.swap.length; i += 1) {
+                        self.swapNode(elsToFix.swap[i]);
                     }
                 }
             }
-            //remove unwanted
-            if (elsToFix.remove.length) {
-                for (i = 0; i < elsToFix.remove.length; i += 1) {
-                    self.removeNode(elsToFix.remove[i]);
-                }
-            }
-            if (elsToFix.swap.length) {
-                for (i = 0; i < elsToFix.swap.length; i += 1) {
-                    self.swapNode(elsToFix.swap[i]);
-                }
-            }
-            
             return self;
         },
         isBlockStyle : function (style) {
@@ -491,7 +492,7 @@ function Editor(selector, opts) {
             */
             if (self.isHeading(parentNode.nodeName)) {
                 e.preventDefault();
-                self.newParagraph(currentNode.nextSibling);
+                self.newParagraph(parentNode.nextSibling);
                 
             } else {
                 if (range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) {
@@ -634,7 +635,8 @@ function Editor(selector, opts) {
                 placeHolder = function (e) {
                     var el = e.target || e,
                         placeHolderText = el.getAttribute('data-placeholder');
-                    if (el.innerHTML.trim() === '') {
+                    if (el.textContent.trim() === '') {
+                        self.cleanUp();
                         el.className += ' editor-placeholder';
                     } else {
                         el.className = el.className.replace(/editor-placeholder/g, '').replace(/\s{2}/g, ' ');
@@ -662,18 +664,18 @@ function Editor(selector, opts) {
                         range = sel.getRangeAt(0);
                     self.currentNode = range.startContainer;
                     
+                    placeHolder(e);
                     if (e.keyCode === 13) {
                         self.enterHandler(e);
                     } else {
                         if (e.keyCode === 8) {
                             //self.backspaceHandler(e);
                         } else {
-                             if (self.liveElement.className.indexOf('editor-heading') === -1 && self.currentNode === self.liveElement) {
+                            if (self.liveElement.className.indexOf('editor-heading') === -1 && self.currentNode === self.liveElement) {
                                 self.newParagraph();
                             }
                         }
                     }
-                    placeHolder(e);
                     highlightListener.call(this);
                 },
                 keyUpListener = function (e) {
