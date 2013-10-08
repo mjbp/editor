@@ -4,11 +4,9 @@
  *  @date       Oct 2013
  *  @by         mjbp
  *  @roadmap    - BUGS
-                    - backspace when no previous nodes throws errors
-                    - Firefox -> create enter to make HR, backspace to delete, enter inserts HR above node
-                    - Firefox -> other backspacing unexpected behaviour
                     - UI positioning / centering and at edges of window
                     - UI wrapping
+                - list functionality -> number/dash to start list
                 - medium placeHolder text
                 - add further configuration options including color/bgColor of UI)
                 - paste without styles
@@ -471,33 +469,42 @@ function Editor(selector, opts) {
             return headings.indexOf(el.toLowerCase()) !== -1 ? true : false;
         },
         enterHandler : function (e) {
-            var range, postRange, rangeParent, previousNode, previousElement, currentNode, nextNode, nextElement, newRange, newEl, sel,
+            var range, parentNode, postRange, rangeParent, previousNode, previousElement, currentNode, nextNode, nextElement, newRange, newEl, sel,
                 self = this;
             
             
             range = self.selection.getRangeAt(0);
+            parentNode = range.startContainer.parentNode;
             previousElement = range.startContainer.parentNode.previousElementSibling ? range.startContainer.parentNode.previousElementSibling.nodeName : undefined;
             previousNode = range.startContainer.parentNode.previousSibling ? range.startContainer.parentNode.previousSibling.nodeName : undefined;
-            currentNode = range.startContainer.parentNode;
+            currentNode = range.startContainer;
             nextElement = range.endContainer.parentNode.nextElementSibling ? range.endContainer.parentNode.nextElementSibling.nodeName : undefined;
             nextNode = range.endContainer.parentNode.nextSibling ? range.endContainer.parentNode.nextSibling.nodeName : undefined;
             
+            /*
             log(previousElement);
             log(previousNode);
+            log(parentNode);
             log(currentNode);
             log(nextElement);
             log(nextNode);
-            
-            
-            if (!!self.isList()) {
-                //self.cleanUp();
-                //e.preventDefault();
-                //self.enterTheCaret();
+            */
+            if (self.isHeading(parentNode.nodeName)) {
+                e.preventDefault();
+                self.newParagraph(currentNode.nextSibling);
+                
             } else {
-               
-                
-                
-                
+                if (range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) {
+                    if (currentNode.textContent.trim() === '') {
+                        e.preventDefault();
+                        self.liveElement.insertBefore(d.createElement('hr'), range.startContainer);
+                    } else {
+                        e.preventDefault();
+                        self.cleanUp();
+                        self.newParagraph();
+                    }
+                }
+            }
                 /*
                 if (range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) {
                     if (self.isHeading(currentNode.nodeName)) {
@@ -530,8 +537,7 @@ function Editor(selector, opts) {
                             }
                         }
                     }
-                }*/
-            }
+                */
             return self;
         },/*
         backspaceHandler : function (e) {
@@ -594,31 +600,31 @@ function Editor(selector, opts) {
             
             return self;
         },*/
-        enterTheCaret : function () {
+        newParagraph : function (target) {
             var currentNode, range, newEl, newRange;
+            target = target || undefined;
             this.selection = w.getSelection();
             range = this.selection.getRangeAt(0);
+            currentNode = range.startContainer;
             
-            if (!this.isList()) {
-                //this.cleanUp();
+            //this.cleanUp();
+            
+            newEl = d.createElement('p');
+            newEl.innerHTML = '\u00a0';
+            
+            if (target === undefined) {
+                this.liveElement.appendChild(newEl);
+            } else {
+                this.liveElement.insertBefore(newEl, target);
             }
-            if (this.liveElement.className.indexOf('editor-heading') === -1) {
-                if (currentNode === this.liveElement) {
-                    newEl = d.createElement('p');
-                    newEl.innerHTML = '\u00a0';
-                            
-                    this.liveElement.appendChild(newEl);
-                            
-                    newRange = d.createRange();
-                    newRange.selectNodeContents(newEl);
-                            
-                    newRange.setStart(newEl, 0);
-                    this.selection = w.getSelection();
-                    this.selection.removeAllRanges();
-                    this.selection.addRange(newRange);
-                    document.execCommand('delete', false, null);
-                }
-            }
+            newRange = d.createRange();
+            newRange.selectNodeContents(newEl);
+                    
+            newRange.setStart(newEl, 0);
+            this.selection = w.getSelection();
+            this.selection.removeAllRanges();
+            this.selection.addRange(newRange);
+            document.execCommand('delete', false, null);
         },
         initListeners : function () {
             var self = this,
@@ -652,13 +658,19 @@ function Editor(selector, opts) {
                     }, 1);
                 },
                 keyDownListener = function (e) {
+                    var sel = d.getSelection(),
+                        range = sel.getRangeAt(0);
+                    self.currentNode = range.startContainer;
+                    
                     if (e.keyCode === 13) {
                         self.enterHandler(e);
                     } else {
                         if (e.keyCode === 8) {
                             //self.backspaceHandler(e);
                         } else {
-                            self.enterTheCaret();
+                             if (self.liveElement.className.indexOf('editor-heading') === -1 && self.currentNode === self.liveElement) {
+                                self.newParagraph();
+                            }
                         }
                     }
                     placeHolder(e);
@@ -666,7 +678,7 @@ function Editor(selector, opts) {
                 },
                 keyUpListener = function (e) {
                     if (e.keyCode === 8 || e.keyCode === 46) {
-                        self.cleanUp();
+                        //self.cleanUp();
                     }
                     placeHolder(e);
                     highlightListener.call(this);
