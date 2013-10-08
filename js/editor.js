@@ -4,7 +4,8 @@
  *  @date       Oct 2013
  *  @by         mjbp
  *  @roadmap    - BUGS
-                    - hit enter when in heading (chrome), divs appear below -> swap for Ps on cleanUp
+                    - Firefox -> create enter to make HR, backspace to delete, enter inserts HR above node
+                    - Firefox -> other backspacing unexpected behaviour
                     - UI positioning / centering and at edges of window
                     - UI wrapping
                 - medium placeHolder text
@@ -496,7 +497,6 @@ function Editor(selector, opts) {
                         
                         self.liveElement.insertBefore(newEl, currentNode.nextSibling);
                         
-                        
                         newRange = d.createRange();
                         newRange.selectNodeContents(newEl);
                         
@@ -506,7 +506,7 @@ function Editor(selector, opts) {
                         sel = w.getSelection();
                         sel.removeAllRanges();
                         sel.addRange(newRange);
-                        document.execCommand('delete', false, null);                        
+                        document.execCommand('delete', false, null);
                         
                     } else {
                     
@@ -517,12 +517,6 @@ function Editor(selector, opts) {
                             if (range.startOffset === 0) {
                                 e.preventDefault();
                                 self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
-                            } else {
-                                if (currentNode.nodeName === 'P' && nextElement === 'P') {
-                                    
-                                    //e.preventDefault();
-                                    //self.liveElement.insertBefore(d.createElement('hr'), range.endContainer.parentNode.nextElementSibling);
-                                }
                             }
                         }
                     }
@@ -567,12 +561,12 @@ function Editor(selector, opts) {
                         newRange = d.createRange();
                         
                         newRange.selectNodeContents(prevPrevNode);
+                        
+                        newRange.setStart(prevPrevNode, 0);
                         newRange.collapse(false);
                         sel = w.getSelection();
                         sel.removeAllRanges();
                         sel.addRange(newRange);
-                        
-                        
                     
                     } else {
                         e.preventDefault();
