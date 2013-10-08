@@ -4,6 +4,7 @@
  *  @date       Oct 2013
  *  @by         mjbp
  *  @roadmap    - BUGS
+                    - backspace when no previous nodes throws errors
                     - Firefox -> create enter to make HR, backspace to delete, enter inserts HR above node
                     - Firefox -> other backspacing unexpected behaviour
                     - UI positioning / centering and at edges of window
@@ -344,7 +345,7 @@ function Editor(selector, opts) {
                             d.execCommand('formatBlock', false, 'p');
                             d.execCommand('outdent');
                         } else {
-                            removeIncompatibles(parentNodes, incompatibles);
+                            //removeIncompatibles(parentNodes, incompatibles);
                             
                             if (listType === 'UL') {
                                 d.execCommand('insertunorderedlist', false);
@@ -473,22 +474,31 @@ function Editor(selector, opts) {
             var range, postRange, rangeParent, previousNode, previousElement, currentNode, nextNode, nextElement, newRange, newEl, sel,
                 self = this;
             
+            
+            range = self.selection.getRangeAt(0);
+            previousElement = range.startContainer.parentNode.previousElementSibling ? range.startContainer.parentNode.previousElementSibling.nodeName : undefined;
+            previousNode = range.startContainer.parentNode.previousSibling ? range.startContainer.parentNode.previousSibling.nodeName : undefined;
+            currentNode = range.startContainer.parentNode;
+            nextElement = range.endContainer.parentNode.nextElementSibling ? range.endContainer.parentNode.nextElementSibling.nodeName : undefined;
+            nextNode = range.endContainer.parentNode.nextSibling ? range.endContainer.parentNode.nextSibling.nodeName : undefined;
+            
+            log(previousElement);
+            log(previousNode);
+            log(currentNode);
+            log(nextElement);
+            log(nextNode);
+            
+            
             if (!!self.isList()) {
-                self.cleanUp();
+                //self.cleanUp();
+                //e.preventDefault();
+                //self.enterTheCaret();
             } else {
-                range = self.selection.getRangeAt(0);
-                previousElement = range.startContainer.parentNode.previousElementSibling ? range.startContainer.parentNode.previousElementSibling.nodeName : undefined;
-                previousNode = range.startContainer.parentNode.previousSibling ? range.startContainer.parentNode.previousSibling.nodeName : undefined;
-                currentNode = range.startContainer.parentNode;
-                nextElement = range.endContainer.parentNode.nextElementSibling ? range.endContainer.parentNode.nextElementSibling.nodeName : undefined;
-                nextNode = range.endContainer.parentNode.nextSibling ? range.endContainer.parentNode.nextSibling.nodeName : undefined;
+               
+                
+                
                 
                 /*
-                log(previousElement);
-                log(previousNode);
-                log(currentNode);
-                */
-                
                 if (range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) {
                     if (self.isHeading(currentNode.nodeName)) {
                         e.preventDefault();
@@ -520,20 +530,22 @@ function Editor(selector, opts) {
                             }
                         }
                     }
-                }
+                }*/
             }
             return self;
-        },
+        },/*
         backspaceHandler : function (e) {
             var previousNode, previousHTML, currentNode, currentHTML, replacement, savedSelection, replacementName, sel, newRange, newP,
                 self = this,
-                range = self.selection.getRangeAt(0),
+                range = self.selection ? self.selection.getRangeAt(0) : undefined,
                 prevPrevNode;
                 
             
-            if (range.startOffset === 0) {
-                previousNode = range.startContainer.parentNode.previousElementSibling;
-                previousHTML = previousNode.innerHTML;
+            if (range !== undefined && range.startOffset === 0) {
+                previousNode = range.startContainer.parentNode.previousElementSibling || undefined;
+                if (previousNode !== undefined) {
+                    previousHTML = previousNode.innerHTML;
+                }
                 currentNode = range.startContainer.parentNode;
                 currentHTML = currentNode.innerHTML;
                 
@@ -541,20 +553,22 @@ function Editor(selector, opts) {
                     prevPrevNode = range.startContainer.previousElementSibling.previousElementSibling || undefined;
                 }
                 if (currentNode !== self.liveElement) {
-                    savedSelection = toolkit.selection.saveSelection(previousNode);
-                    replacementName = previousNode.nodeName === 'HR' ? 'p' : previousNode.nodeName.toLowerCase();
-                    
-                    replacement = d.createElement(replacementName);
-                    
-                    e.preventDefault();
-                    
-                    replacement.innerHTML = previousHTML + currentHTML;
-                    currentNode.parentNode.removeChild(currentNode);
-                    previousNode.parentNode.replaceChild(replacement, previousNode);
-                    toolkit.selection.restoreSelection(replacement, savedSelection);
+                    if (previousNode !== undefined) {
+                        savedSelection = toolkit.selection.saveSelection(previousNode);
+                        replacementName = previousNode.nodeName === 'HR' ? 'p' : previousNode.nodeName.toLowerCase();
+                        
+                        replacement = d.createElement(replacementName);
+                        
+                        e.preventDefault();
+                        
+                        replacement.innerHTML = previousHTML + currentHTML;
+                        currentNode.parentNode.removeChild(currentNode);
+                        previousNode.parentNode.replaceChild(replacement, previousNode);
+                        toolkit.selection.restoreSelection(replacement, savedSelection);
+                    }
 
                 } else {
-                    if (range.startContainer.previousElementSibling.nodeName === 'HR') {
+                    if ( range.startContainer.previousElementSibling && range.startContainer.previousElementSibling.nodeName === 'HR') {
                         e.preventDefault();
                         
                         self.removeNode(range.startContainer.previousElementSibling);
@@ -570,31 +584,70 @@ function Editor(selector, opts) {
                     
                     } else {
                         e.preventDefault();
-                        savedSelection = toolkit.selection.saveSelection(range.startContainer.previousElementSibling);
-                        toolkit.selection.restoreSelection(range.startContainer.previousElementSibling, savedSelection);
+                        if (range.startContainer.previousElementSibling) {
+                            savedSelection = toolkit.selection.saveSelection(range.startContainer.previousElementSibling);
+                            toolkit.selection.restoreSelection(range.startContainer.previousElementSibling, savedSelection);
+                        }
                     }
                 }
             }
             
             return self;
+        },*/
+        enterTheCaret : function () {
+            var currentNode, range, newEl, newRange;
+            this.selection = w.getSelection();
+            range = this.selection.getRangeAt(0);
+            
+            if (!this.isList()) {
+                //this.cleanUp();
+            }
+            if (this.liveElement.className.indexOf('editor-heading') === -1) {
+                if (currentNode === this.liveElement) {
+                    newEl = d.createElement('p');
+                    newEl.innerHTML = '\u00a0';
+                            
+                    this.liveElement.appendChild(newEl);
+                            
+                    newRange = d.createRange();
+                    newRange.selectNodeContents(newEl);
+                            
+                    newRange.setStart(newEl, 0);
+                    this.selection = w.getSelection();
+                    this.selection.removeAllRanges();
+                    this.selection.addRange(newRange);
+                    document.execCommand('delete', false, null);
+                }
+            }
         },
         initListeners : function () {
             var self = this,
                 cancelBtn,
                 i,
                 l = this.elements.length,
+                placeHolder = function (e) {
+                    var el = e.target || e,
+                        placeHolderText = el.getAttribute('data-placeholder');
+                    if (el.innerHTML.trim() === '') {
+                        el.className += ' editor-placeholder';
+                    } else {
+                        el.className = el.className.replace(/editor-placeholder/g, '').replace(/\s{2}/g, ' ');
+                    }
+                },
                 highlightListener = function (e) {
                     var me = this;
                     w.setTimeout(function () {
                         self.selection = w.getSelection();
                         self.liveElement = me;
                         
-                        if (self.selection.isCollapsed === false) {
-                            //show editor
-                            self.updateButtonState();
-                            self.showUI();
-                        } else {
-                            self.hideUI();
+                        if (self.liveElement.className.indexOf('editor-heading') === -1) {
+                            if (self.selection.isCollapsed === false) {
+                                //show editor
+                                self.updateButtonState();
+                                self.showUI();
+                            } else {
+                                self.hideUI();
+                            }
                         }
                     }, 1);
                 },
@@ -603,15 +656,19 @@ function Editor(selector, opts) {
                         self.enterHandler(e);
                     } else {
                         if (e.keyCode === 8) {
-                            self.backspaceHandler(e);
+                            //self.backspaceHandler(e);
+                        } else {
+                            self.enterTheCaret();
                         }
                     }
+                    placeHolder(e);
                     highlightListener.call(this);
                 },
                 keyUpListener = function (e) {
                     if (e.keyCode === 8 || e.keyCode === 46) {
                         self.cleanUp();
                     }
+                    placeHolder(e);
                     highlightListener.call(this);
                 },
                 linkInputListener = function (e) {
@@ -622,6 +679,7 @@ function Editor(selector, opts) {
                 };
             
             for (i = 0; i < l; i += 1) {
+                placeHolder(this.elements[i]);
                 toolkit.on(this.elements[i], 'mouseup', highlightListener);
                 toolkit.on(this.elements[i], 'keydown', keyDownListener);
                 toolkit.on(this.elements[i], 'keyup', keyUpListener);
@@ -658,6 +716,7 @@ function Editor(selector, opts) {
             
             //set elements based on selector
             this.elements = d.querySelectorAll(selector);
+            
             if (this.elements.length === 0) {
                 return;
             }
