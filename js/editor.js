@@ -602,15 +602,19 @@ function Editor(selector, opts) {
             return self;
         },*/
         newParagraph : function (target) {
-            var currentNode, range, newEl, newRange;
+            var currentNode, range, newEl, newRange, liveP;
             target = target || undefined;
             this.selection = w.getSelection();
             range = this.selection.getRangeAt(0);
             currentNode = range.startContainer;
             
-            //this.cleanUp();
-            
             newEl = d.createElement('p');
+            liveP = d.getElementById('editor-new-p');
+            
+            if (liveP) {
+                liveP.removeAttribute('id');
+            }
+            newEl.id = 'editor-new-p';
             newEl.innerHTML = '\u00a0';
             
             if (target === undefined) {
@@ -632,15 +636,25 @@ function Editor(selector, opts) {
                 cancelBtn,
                 i,
                 l = this.elements.length,
-                placeHolder = function (e) {
-                    var el = e.target || e,
-                        placeHolderText = el.getAttribute('data-placeholder');
-                    if (el.textContent.trim() === '') {
-                        self.cleanUp();
+                placeHolder = function (el) {
+                    var placeHolderText = el.getAttribute('data-placeholder');
+                    //self.cleanUp();
+                    if (el.innerHTML.trim() === '' && el.className.indexOf('editor-placeholder') === -1) {
                         el.className += ' editor-placeholder';
                     } else {
                         el.className = el.className.replace(/editor-placeholder/g, '').replace(/\s{2}/g, ' ');
                     }
+                },
+                focus = function (e) {
+                    var el = e.target || e;
+                    if (el.childNodes.length === 0) {
+                        placeHolder(el);
+                    }
+                },
+                blur = function (e) {
+                    var el = e.target || e;
+                    self.cleanUp();
+                    placeHolder(el);
                 },
                 highlightListener = function (e) {
                     var me = this;
@@ -664,7 +678,6 @@ function Editor(selector, opts) {
                         range = sel.getRangeAt(0);
                     self.currentNode = range.startContainer;
                     
-                    placeHolder(e);
                     if (e.keyCode === 13) {
                         self.enterHandler(e);
                     } else {
@@ -682,7 +695,6 @@ function Editor(selector, opts) {
                     if (e.keyCode === 8 || e.keyCode === 46) {
                         //self.cleanUp();
                     }
-                    placeHolder(e);
                     highlightListener.call(this);
                 },
                 linkInputListener = function (e) {
@@ -697,6 +709,8 @@ function Editor(selector, opts) {
                 toolkit.on(this.elements[i], 'mouseup', highlightListener);
                 toolkit.on(this.elements[i], 'keydown', keyDownListener);
                 toolkit.on(this.elements[i], 'keyup', keyUpListener);
+                toolkit.on(this.elements[i], 'blur', blur);
+                toolkit.on(this.elements[i], 'focus', focus);
             }
             
             toolkit.on(d.getElementById('editor-link-field'), 'keydown', linkInputListener);
