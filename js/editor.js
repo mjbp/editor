@@ -372,8 +372,8 @@ function Editor(selector, opts) {
             dispatchTable[c]();
             if (self.isBlockStyle(c)) {
                 self.cleanUp();
+                toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
             }
-            toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
             
             self.updateButtonState()
                 .placeUI();
@@ -490,7 +490,8 @@ function Editor(selector, opts) {
             log(nextElement);
             log(nextNode);
             */
-            if (self.isHeading(parentNode.nodeName)) {
+            //log(parentNode);
+            if (self.isHeading(parentNode.nodeName) || parentNode.nodeName === 'BLOCKQUOTE') {
                 e.preventDefault();
                 self.newParagraph(parentNode.nextSibling);
                 
@@ -500,6 +501,7 @@ function Editor(selector, opts) {
                         e.preventDefault();
                         self.liveElement.insertBefore(d.createElement('hr'), range.startContainer);
                     } else {
+                        log('here');
                         e.preventDefault();
                         self.cleanUp();
                         self.newParagraph();

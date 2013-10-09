@@ -184,12 +184,12 @@ a:hover {
     height:30px;
     display:block;
     padding:0 2%;
-    width:92%;
+    width:90%;
     color:#fff;
     display:inline-block;
 }
 #editor-link-field-holder button {
-    width:5%;
+    width:6%;
     display:inline-block;
 }
 .editor-buttons {
