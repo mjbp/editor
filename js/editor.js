@@ -3,11 +3,7 @@
  *  @name       editor
  *  @date       Oct 2013
  *  @by         mjbp
- *  @roadmap    - BUGS
-                    - UI positioning / centering and at edges of window
-                    - UI wrapping
-                - list functionality -> number/dash to start list
-                - medium placeHolder text
+ *  @roadmap    - list functionality -> number/dash to start list
                 - add further configuration options including color/bgColor of UI)
                 - paste without styles
                 - trim leading and trailing whitespace when applying inline styles
@@ -501,15 +497,29 @@ function Editor(selector, opts) {
                 self.newParagraph(parentNode.nextSibling);
                 
             } else {
-                if (range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) {
+                if ((range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) && !self.isList(currentNode)) {
                     if (currentNode.textContent.trim() === '') {
                         e.preventDefault();
                         self.liveElement.insertBefore(d.createElement('hr'), range.startContainer);
                     } else {
-                        log('here');
-                        e.preventDefault();
-                        self.cleanUp();
-                        self.newParagraph();
+                        if (/^1\./.test(currentNode.textContent)) {
+                            //find current element
+                            //get first textNode
+                            //test THAT for ol/ul-like features
+                            e.preventDefault();
+                            currentNode.textContent = currentNode.textContent.replace(/^1\./, '');
+                            self.executeStyle('ol');
+                        } else {
+                            if (/^-/.test(currentNode.textContent)) {
+                                e.preventDefault();
+                                currentNode.textContent = currentNode.textContent.replace(/^-?\s*/, '');
+                                self.executeStyle('ul');
+                            } else {
+                                e.preventDefault();
+                                self.cleanUp();
+                                self.newParagraph();
+                            }
+                        }
                     }
                 }
             }
