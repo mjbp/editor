@@ -138,10 +138,15 @@ function Editor(selector, opts) {
         },
         placeUI : function () {
             this.range = this.selection.getRangeAt(0);
-            var boundary = this.range.getBoundingClientRect();
+            var limit = 5,//smallest # px from viewport edge,
+                limitR = (w.innerWidth - this.gui.clientWidth) - 5,
+                boundary = this.range.getBoundingClientRect(),
+                guiLeft = (((boundary.right - boundary.left) / 2) + boundary.left) - (this.gui.clientWidth / 2);
+                
+            guiLeft = guiLeft < limit ? limit : guiLeft > limitR ? limitR : guiLeft;
             
-            this.gui.style.top = boundary.top - 48 + window.pageYOffset + "px";
-            this.gui.style.left = boundary.left / 2 + "px";
+            this.gui.style.top = boundary.top - (this.gui.clientHeight + 8) + window.pageYOffset + "px";
+            this.gui.style.left = guiLeft + "px";
             return this;
         },
         showUI : function () {
