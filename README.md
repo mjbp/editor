@@ -47,6 +47,5 @@ Developed and tested in latest builds of Chrome and Firefox.
 
 
 ##Credits
-Obvious Corp's medium.com
-tholman's zenpen.io
+Obvious Corp's medium.com, tholman's [zenpen.io] (zenpen.io)
 
