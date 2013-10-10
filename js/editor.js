@@ -130,9 +130,7 @@ function Editor(selector, opts) {
     Editor.prototype = {
         defaults: {
             delay: 0,
-            buttons: ['b', 'i', 'blockquote', 'ul', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'cancel'],
-            toolBarBgColor: '0, 0, 0',
-            toolBarBtnColor: '255, 255, 255'
+            buttons: ['b', 'i', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'cancel']
         },
         placeUI : function () {
             this.range = this.selection.getRangeAt(0);
