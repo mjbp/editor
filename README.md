@@ -23,13 +23,16 @@ Include editor.js and style.css
 
 Instantiate a new Editor object passing css selector (those supported by document.querySelectorAll())
 
-<script>var editor = new Editor('.editable');</script>
+```javascriptvar editor = new Editor('.editable');</script>
 
 In this example all elements with the className 'editable' will be rendered contentEditable and the toolbar enabled.
 
 ###Options
 Add editability but not the toolbar by adding 'editor-heading' class to an element:
-<header class="editable editor-heading"></header>
+
+```html
+    <header class="editable editor-heading"></header>
+```
 
 Set the HTML and style formatting you would like (the buttons shown on the toolbar) to use by passing them to the editor constructor:
 
