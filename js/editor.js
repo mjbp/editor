@@ -6,7 +6,8 @@
  *  @roadmap    - paste without styles
                 - trim leading and trailing whitespace when applying inline styles
                 - IE9
-                - leverage localStorage to save amends
+                - JSONify content for further integration
+                - leverage localStorage to save as going
  */
 
 function log(w) {
@@ -207,7 +208,6 @@ function Editor(selector, opts) {
             var i, l, j, k,
                 self = this,
                 child,
-                frag,
                 disallowedEls = ['BR', 'SPAN', 'DIV'],
                 disallowedAttrs = ['class', 'style'],
                 children,
@@ -620,7 +620,6 @@ function Editor(selector, opts) {
                         self.enterHandler(e);
                     } else {
                         if (e.keyCode === 8) {
-                            //self.cleanUp();
                             self.backspaceHandler(e);
                         } else {
                             if (self.liveElement.className.indexOf('editor-heading') === -1 && self.currentNode === self.liveElement) {
@@ -631,9 +630,6 @@ function Editor(selector, opts) {
                     highlightListener.call(this);
                 },
                 keyUpListener = function (e) {
-                    if (e.keyCode === 8 && !!toolkit.isChrome()) {
-                        //self.cleanUp();
-                    }
                     highlightListener.call(this);
                 },
                 linkInputListener = function (e) {
