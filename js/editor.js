@@ -1,4 +1,4 @@
-/*global window, document, console */
+/*global window, document, console, navigator */
 /*!
  *  @name       editor
  *  @date       Oct 2013
@@ -336,21 +336,55 @@ function Editor(selector, opts) {
                             range,
                             frag,
                             endNode,
-                            incompatibles = incompatibleElements[listType];
+                            incompatibles = incompatibleElements[listType],
+                            execList = function (cmd) {
+                                var range = w.getSelection().getRangeAt(0),
+                                    dummy,
+                                    newRange,
+                                    ceNode;
+                                try {
+                                    document.execCommand(cmd, false, null);
+                                } catch (e) {
+                                    //special case for Mozilla Bug #442186
+                                    if (e && e.result === 2147500037) {
+                                        //probably firefox bug 442186 - workaround
+                                        dummy = document.createElement('div');
+                                
+                                        //find node with contentEditable
+                                        ceNode = range.startContainer.parentNode;
+                                        while (ceNode && ceNode.contentEditable !== 'true') {
+                                            ceNode = ceNode.parentNode;
+                                        }
+                                        if (!ceNode) {
+                                            throw 'Selected node is not editable!';
+                                        }
+                                        ceNode.insertBefore(dummy, ceNode.childNodes[0]);
+                                        d.execCommand(cmd, false, null);
+                                        dummy.parentNode.removeChild(dummy);
+                                    }
+                                }
+                                newRange = d.createRange();
+                                newRange.selectNodeContents(range.startContainer);
+                                newRange.collapse(false);
+                                //self.selection = w.getSelection();
+                                self.selection.removeAllRanges();
+                                self.selection.addRange(newRange);
+                                self.savedSelection = toolkit.selection.saveSelection(self.liveElement);
+                            };
                         
-                        startNode = self.selection.anchorNode.parentNode;
-                        endNode = self.selection.focusNode.parentNode;
+                        //startNode = self.selection.anchorNode.parentNode;
+                        //endNode = self.selection.focusNode.parentNode;
                         
                         if (!!parentNodes[listType]) {
                             d.execCommand('formatBlock', false, 'p');
                             d.execCommand('outdent');
                         } else {
-                            //removeIncompatibles(parentNodes, incompatibles);
+                            removeIncompatibles(parentNodes, incompatibles);
                             
                             if (listType === 'UL') {
-                                d.execCommand('insertunorderedlist', false);
+                                execList('insertunorderedlist');
                             } else {
-                                d.execCommand('insertorderedlist', false);
+                                execList('insertorderedlist');
                             }
                         }
                     },
@@ -373,8 +407,8 @@ function Editor(selector, opts) {
             dispatchTable[c]();
             if (self.isBlockStyle(c)) {
                 self.cleanUp();
-                toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
             }
+            toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
             
             self.updateButtonState()
                 .placeUI();
@@ -492,32 +526,32 @@ function Editor(selector, opts) {
             log(nextNode);
             */
             //log(parentNode);
-            if (self.isHeading(parentNode.nodeName) || parentNode.nodeName === 'BLOCKQUOTE') {
-                e.preventDefault();
-                self.newParagraph(parentNode.nextSibling);
-                
-            } else {
-                if ((range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) && !self.isList(currentNode)) {
-                    if (currentNode.textContent.trim() === '') {
-                        e.preventDefault();
-                        self.liveElement.insertBefore(d.createElement('hr'), range.startContainer);
-                    } else {
-                        if (/^1\./.test(currentNode.textContent)) {
-                            //find current element
-                            //get first textNode
-                            //test THAT for ol/ul-like features
+            if (!self.isList(parentNode)) {
+                if (self.isHeading(parentNode.nodeName) || parentNode.nodeName === 'BLOCKQUOTE') {
+                    e.preventDefault();
+                    self.newParagraph(parentNode.nextSibling);
+                    
+                } else {
+                    if ((range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) && !self.isList(currentNode)) {
+                        if (currentNode.textContent.trim() === '') {
                             e.preventDefault();
-                            currentNode.textContent = currentNode.textContent.replace(/^1\./, '');
-                            self.executeStyle('ol');
+                            //log(range.startContainer);
+                            self.liveElement.insertBefore(d.createElement('hr'), range.startContainer);
                         } else {
-                            if (/^-/.test(currentNode.textContent)) {
+                            if (/^1\./.test(currentNode.textContent)) {
                                 e.preventDefault();
-                                currentNode.textContent = currentNode.textContent.replace(/^-?\s*/, '');
-                                self.executeStyle('ul');
+                                currentNode.textContent = currentNode.textContent.replace(/^1\.\s/, '');
+                                self.executeStyle('ol');
                             } else {
-                                e.preventDefault();
-                                self.cleanUp();
-                                self.newParagraph();
+                                if (/^-/.test(currentNode.textContent)) {
+                                    e.preventDefault();
+                                    currentNode.textContent = currentNode.textContent.replace(/^-?\s/, '');
+                                    self.executeStyle('ul');
+                                } else {
+                                    e.preventDefault();
+                                    self.cleanUp();
+                                    self.newParagraph();
+                                }
                             }
                         }
                     }
@@ -698,7 +732,8 @@ function Editor(selector, opts) {
                     if (e.keyCode === 13) {
                         self.enterHandler(e);
                     } else {
-                        if (e.keyCode === 8) {
+                        if (e.keyCode === 8 && navigator.userAgent.toLowerCase().indexOf('chrome') > -1) {
+                            //self.cleanUp();
                             //self.backspaceHandler(e);
                         } else {
                             if (self.liveElement.className.indexOf('editor-heading') === -1 && self.currentNode === self.liveElement) {
@@ -709,8 +744,8 @@ function Editor(selector, opts) {
                     highlightListener.call(this);
                 },
                 keyUpListener = function (e) {
-                    if (e.keyCode === 8 || e.keyCode === 46) {
-                        //self.cleanUp();
+                    if (e.keyCode === 8 && navigator.userAgent.toLowerCase().indexOf('chrome') > -1) {
+                        self.cleanUp();
                     }
                     highlightListener.call(this);
                 },
@@ -736,9 +771,14 @@ function Editor(selector, opts) {
         },
         initEditableElements : function (selector) {
             var i,
-                l = this.elements.length;
+                l = this.elements.length,
+                headerAttribute = navigator.userAgent.toLowerCase().indexOf('chrome') > -1 ? 'plaintext-only' : true;
             for (i = 0; i < l; i += 1) {
-                this.elements[i].setAttribute('contentEditable', true);
+                if (this.elements[i].className.indexOf('editor-heading') > -1) {
+                    this.elements[i].setAttribute('contentEditable', headerAttribute);
+                } else {
+                    this.elements[i].setAttribute('contentEditable', true);
+                }
             }
             return this;
         },

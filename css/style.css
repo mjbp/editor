@@ -54,25 +54,29 @@ body {
 
 section {margin: auto;}
 
-header {font:700 2.5em 'Open Sans', sans-serif;margin-bottom:.5em;display: block;min-height:1.5em;}
+header {margin-bottom:1.5em;display: block;}
+header h1 {font:700 2.5em 'Open Sans', sans-serif;margin-bottom:.25em;display: block;min-height:1.5em;}
+header h2 {font:1.5em 'PT Serif', serif;font-style:italic;margin-bottom:.5em;display: block;min-height:1.5em;}
 
 article { padding-bottom: 5em;font-size: 1.2em;display: block;}
 
-blockquote { border-left: 6px solid #57ad68;padding-left: 20px;margin-left: -26px;margin-top: -1px;margin-right: 0px;}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {font:700 1em/1.5 'Open Sans', sans-serif;margin-bottom:1em;}
-h1 {font-size:2em;}
-h2 {font-size:1.5em;}
-h3 {font-size:1.35em;}
-h4 {font-size:1.3em;}
-h5 {font-size:1.25em;}
-h6 {font-size:1.1em;}
-ol, ul, p, blockquote {margin-bottom:1.5em;}
+article blockquote { border-left: 6px solid #57ad68;padding-left: 20px;margin-left: -26px;margin-top: -1px;margin-right: 0px;}
+article h1,
+article h2,
+article h3,
+article h4,
+article h5,
+article h6 {font:700 1em/1.5 'Open Sans', sans-serif;margin-bottom:1em;}
+article h1 {font-size:2em;}
+article h2 {font-size:1.5em;}
+article h3 {font-size:1.35em;}
+article h4 {font-size:1.3em;}
+article h5 {font-size:1.25em;}
+article h6 {font-size:1.1em;}
+article ol,
+article ul,
+article p,
+article blockquote {margin-bottom:1.5em;}
 
 hr {display: block;width: 20%;margin: 40px auto 40px auto;border: 1px solid #dededc;}
 
@@ -207,8 +211,7 @@ a:hover {
 .editor-placeholder:after {
     color: #B3B3B1;
     content: attr(data-placeholder);
-    font-style: italic;
 }
-.editor-heading.editor-placeholder:after {
-    font-style: normal;
+h2.editor-placeholder:after {
+    font-style: italic;
 }
