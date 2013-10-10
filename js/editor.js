@@ -394,7 +394,7 @@ function Editor(selector, opts) {
                         }
                     }
                 };
-            //self.savedSelection = toolkit.selection.saveSelection(self.liveElement);
+            self.savedSelection = toolkit.selection.saveSelection(self.liveElement);
             dispatchTable[c]();
             if (self.isBlockStyle(c)) {
                 self.cleanUp();
