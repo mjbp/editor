@@ -1,7 +1,7 @@
 #editor
 A basic inline HTML editor based on the [medium.com] (medium.com) authoring experience.
 
-Demo: [mjbp.github.io/editor] (mjbp.github.io/editor)
+Demo: [http://mjbp.github.io/editor] (http://mjbp.github.io/editor)
 
 ##Features
 Adds contentEditability on the fly
@@ -47,5 +47,5 @@ Developed and tested in latest builds of Chrome and Firefox.
 
 
 ##Credits
-Obvious Corp's medium.com, tholman's [zenpen.io] (zenpen.io)
+Obvious Corp's medium.com, tholman's [http://zenpen.io] (http://zenpen.io)
 
