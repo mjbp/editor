@@ -3,9 +3,7 @@
  *  @name       editor
  *  @date       Oct 2013
  *  @by         mjbp
- *  @roadmap    - list functionality -> number/dash to start list
-                - add further configuration options including color/bgColor of UI)
-                - paste without styles
+ *  @roadmap    - paste without styles
                 - trim leading and trailing whitespace when applying inline styles
                 - IE9
                 - leverage localStorage to save amends
@@ -121,6 +119,9 @@ function Editor(selector, opts) {
                 restOfNode = postRange.cloneContents().textContent.length;
                 return restOfNode === 0 ? true : false;
             }
+        },
+        isChrome : function () {
+            return navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
         }
     };
     
@@ -134,7 +135,7 @@ function Editor(selector, opts) {
         },
         placeUI : function () {
             this.range = this.selection.getRangeAt(0);
-            var limit = 5,//smallest # px from viewport edge,
+            var limit = 5,
                 limitR = (w.innerWidth - this.gui.clientWidth) - 5,
                 boundary = this.range.getBoundingClientRect(),
                 guiLeft = (((boundary.right - boundary.left) / 2) + boundary.left) - (this.gui.clientWidth / 2);
@@ -207,12 +208,10 @@ function Editor(selector, opts) {
                 self = this,
                 child,
                 frag,
-                disallowedEls = ['BR', 'SPAN'],
+                disallowedEls = ['BR', 'SPAN', 'DIV'],
                 disallowedAttrs = ['class', 'style'],
                 children,
                 elsToFix = {remove : [], swap : []};
-            
-            //log('cleaning up...');
             
             if (this.liveElement !== undefined) {
                 children = this.liveElement.getElementsByTagName('*');
@@ -220,7 +219,6 @@ function Editor(selector, opts) {
                 
                 for (i = 0; i < l; i += 1) {
                     child = children[i];
-                    //log(child);
                     child.normalize();
                     
                      //remove unwanted attributes
@@ -241,7 +239,6 @@ function Editor(selector, opts) {
                         }
                         //check for orphaned LIs
                         if (child.nodeName === 'LI' && (child.parentNode.nodeName !== 'UL' && child.parentNode.nodeName !== 'OL')) {
-                            //log(child.parentNode);
                             elsToFix.swap.push(child);
                         }
                     }
@@ -297,12 +294,9 @@ function Editor(selector, opts) {
                             text,
                             incompatibles = incompatibleElements.heading;
                         
-                        //remove elements we don't want mixing...
                         removeIncompatibles(parentNodes, incompatibles);
                         
                         if (!!parentNodes.BLOCKQUOTE) {
-                            //is this next line needed under windows/chrome but not ubuntu? ;_;
-                            //self.removeNode(parentNodes.BLOCKQUOTE);
                             d.execCommand('formatBlock', false, 'p');
                             d.execCommand('outdent');
                         } else {
@@ -318,8 +312,7 @@ function Editor(selector, opts) {
                     'heading' : function (h) {
                         var parentNodes = self.findParentNodes(self.selection.anchorNode),
                             incompatibles = incompatibleElements.heading;
-                        
-                        //remove elements we don't want mixing...                        
+                                        
                         removeIncompatibles(parentNodes, incompatibles);
                         
                         if (!!parentNodes[h]) {
@@ -371,16 +364,14 @@ function Editor(selector, opts) {
                                 self.selection.addRange(newRange);
                                 self.savedSelection = toolkit.selection.saveSelection(self.liveElement);
                             };
-                        
-                        //startNode = self.selection.anchorNode.parentNode;
-                        //endNode = self.selection.focusNode.parentNode;
-                        
+                                                
                         if (!!parentNodes[listType]) {
                             d.execCommand('formatBlock', false, 'p');
                             d.execCommand('outdent');
                         } else {
-                            removeIncompatibles(parentNodes, incompatibles);
-                            
+                            if (toolkit.isChrome()) {
+                                removeIncompatibles(parentNodes, incompatibles);
+                            }
                             if (listType === 'UL') {
                                 execList('insertunorderedlist');
                             } else {
@@ -403,12 +394,12 @@ function Editor(selector, opts) {
                         }
                     }
                 };
-            self.savedSelection = toolkit.selection.saveSelection(self.liveElement);
+            //self.savedSelection = toolkit.selection.saveSelection(self.liveElement);
             dispatchTable[c]();
             if (self.isBlockStyle(c)) {
                 self.cleanUp();
             }
-            toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
+            //toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
             
             self.updateButtonState()
                 .placeUI();
@@ -416,8 +407,6 @@ function Editor(selector, opts) {
             return this;
         },
         addLink : function () {
-            //toolkit.selection.restoreSelection(self.liveElement, self.savedSelection);
-            
             d.execCommand('unlink', false);
             d.execCommand('createLink', false, '/');
         },
@@ -429,7 +418,6 @@ function Editor(selector, opts) {
             
             d.execCommand('unlink', false);
             
-            //TRIM WHITESPACE FROM RANGE
             if (url.trim() !== "") {
                 if (!url.match("^(http|https)://")) {
                     url = "http://" + url;
@@ -511,21 +499,8 @@ function Editor(selector, opts) {
             
             range = self.selection.getRangeAt(0);
             parentNode = range.startContainer.parentNode;
-            previousElement = range.startContainer.parentNode.previousElementSibling ? range.startContainer.parentNode.previousElementSibling.nodeName : undefined;
-            previousNode = range.startContainer.parentNode.previousSibling ? range.startContainer.parentNode.previousSibling.nodeName : undefined;
             currentNode = range.startContainer;
-            nextElement = range.endContainer.parentNode.nextElementSibling ? range.endContainer.parentNode.nextElementSibling.nodeName : undefined;
-            nextNode = range.endContainer.parentNode.nextSibling ? range.endContainer.parentNode.nextSibling.nodeName : undefined;
             
-            /*
-            log(previousElement);
-            log(previousNode);
-            log(parentNode);
-            log(currentNode);
-            log(nextElement);
-            log(nextNode);
-            */
-            //log(parentNode);
             if (!self.isList(parentNode)) {
                 if (self.isHeading(parentNode.nodeName) || parentNode.nodeName === 'BLOCKQUOTE') {
                     e.preventDefault();
@@ -538,7 +513,7 @@ function Editor(selector, opts) {
                             //log(range.startContainer);
                             self.liveElement.insertBefore(d.createElement('hr'), range.startContainer);
                         } else {
-                            if (/^1\./.test(currentNode.textContent)) {
+                            if (/^1\.?/.test(currentNode.textContent)) {
                                 e.preventDefault();
                                 currentNode.textContent = currentNode.textContent.replace(/^1\.\s/, '');
                                 self.executeStyle('ol');
@@ -557,101 +532,13 @@ function Editor(selector, opts) {
                     }
                 }
             }
-                /*
-                if (range.startOffset === 0 || !!toolkit.selection.atEndOfNode(range)) {
-                    if (self.isHeading(currentNode.nodeName)) {
-                        e.preventDefault();
-                        newEl = d.createElement('p');
-                        newEl.innerHTML = '\u00a0';
-                        
-                        self.liveElement.insertBefore(newEl, currentNode.nextSibling);
-                        
-                        newRange = d.createRange();
-                        newRange.selectNodeContents(newEl);
-                        
-                        newRange.setStart(newEl, 0);
-                        //newRange.setEnd(newEl, 0);
-                        //newRange.collapse(true);
-                        sel = w.getSelection();
-                        sel.removeAllRanges();
-                        sel.addRange(newRange);
-                        document.execCommand('delete', false, null);
-                        
-                    } else {
-                    
-                        if (currentNode === self.liveElement && nextElement === undefined) {
-                            e.preventDefault();
-                            self.liveElement.insertBefore(d.createElement('hr'), range.startContainer);
-                        } else {
-                            if (range.startOffset === 0) {
-                                e.preventDefault();
-                                self.liveElement.insertBefore(d.createElement('hr'), range.startContainer.parentNode);
-                            }
-                        }
-                    }
-                */
             return self;
-        },/*
+        },
         backspaceHandler : function (e) {
-            var previousNode, previousHTML, currentNode, currentHTML, replacement, savedSelection, replacementName, sel, newRange, newP,
-                self = this,
-                range = self.selection ? self.selection.getRangeAt(0) : undefined,
-                prevPrevNode;
-                
-            
-            if (range !== undefined && range.startOffset === 0) {
-                previousNode = range.startContainer.parentNode.previousElementSibling || undefined;
-                if (previousNode !== undefined) {
-                    previousHTML = previousNode.innerHTML;
-                }
-                currentNode = range.startContainer.parentNode;
-                currentHTML = currentNode.innerHTML;
-                
-                if (range.startContainer.previousElementSibling) {
-                    prevPrevNode = range.startContainer.previousElementSibling.previousElementSibling || undefined;
-                }
-                if (currentNode !== self.liveElement) {
-                    if (previousNode !== undefined) {
-                        savedSelection = toolkit.selection.saveSelection(previousNode);
-                        replacementName = previousNode.nodeName === 'HR' ? 'p' : previousNode.nodeName.toLowerCase();
-                        
-                        replacement = d.createElement(replacementName);
-                        
-                        e.preventDefault();
-                        
-                        replacement.innerHTML = previousHTML + currentHTML;
-                        currentNode.parentNode.removeChild(currentNode);
-                        previousNode.parentNode.replaceChild(replacement, previousNode);
-                        toolkit.selection.restoreSelection(replacement, savedSelection);
-                    }
-
-                } else {
-                    if ( range.startContainer.previousElementSibling && range.startContainer.previousElementSibling.nodeName === 'HR') {
-                        e.preventDefault();
-                        
-                        self.removeNode(range.startContainer.previousElementSibling);
-                        newRange = d.createRange();
-                        
-                        newRange.selectNodeContents(prevPrevNode);
-                        
-                        newRange.setStart(prevPrevNode, 0);
-                        newRange.collapse(false);
-                        sel = w.getSelection();
-                        sel.removeAllRanges();
-                        sel.addRange(newRange);
-                    
-                    } else {
-                        e.preventDefault();
-                        if (range.startContainer.previousElementSibling) {
-                            savedSelection = toolkit.selection.saveSelection(range.startContainer.previousElementSibling);
-                            toolkit.selection.restoreSelection(range.startContainer.previousElementSibling, savedSelection);
-                        }
-                    }
-                }
+            if (!!toolkit.isChrome()) {
+                this.cleanUp();
             }
-            
-            return self;
-        },*/
+        },
         newParagraph : function (target) {
             var currentNode, range, newEl, newRange, liveP;
             target = target || undefined;
@@ -732,9 +619,9 @@ function Editor(selector, opts) {
                     if (e.keyCode === 13) {
                         self.enterHandler(e);
                     } else {
-                        if (e.keyCode === 8 && navigator.userAgent.toLowerCase().indexOf('chrome') > -1) {
+                        if (e.keyCode === 8) {
                             //self.cleanUp();
-                            //self.backspaceHandler(e);
+                            self.backspaceHandler(e);
                         } else {
                             if (self.liveElement.className.indexOf('editor-heading') === -1 && self.currentNode === self.liveElement) {
                                 self.newParagraph();
@@ -744,8 +631,8 @@ function Editor(selector, opts) {
                     highlightListener.call(this);
                 },
                 keyUpListener = function (e) {
-                    if (e.keyCode === 8 && navigator.userAgent.toLowerCase().indexOf('chrome') > -1) {
-                        self.cleanUp();
+                    if (e.keyCode === 8 && !!toolkit.isChrome()) {
+                        //self.cleanUp();
                     }
                     highlightListener.call(this);
                 },
@@ -772,7 +659,7 @@ function Editor(selector, opts) {
         initEditableElements : function (selector) {
             var i,
                 l = this.elements.length,
-                headerAttribute = navigator.userAgent.toLowerCase().indexOf('chrome') > -1 ? 'plaintext-only' : true;
+                headerAttribute = toolkit.isChrome() ? 'plaintext-only' : true;
             for (i = 0; i < l; i += 1) {
                 if (this.elements[i].className.indexOf('editor-heading') > -1) {
                     this.elements[i].setAttribute('contentEditable', headerAttribute);
@@ -783,7 +670,6 @@ function Editor(selector, opts) {
             return this;
         },
         initButtons : function () {
-            //TO DO: templatise and create dynamically
             var self = this,
                 buttons = [].slice.call(this.gui.getElementsByTagName('button'));
            
@@ -796,10 +682,8 @@ function Editor(selector, opts) {
             return this;
         },
         init: function (selector, opts) {
-            //extend defaults with options
             this.defaults = toolkit.extend(this.defaults, opts);
             
-            //set elements based on selector
             this.elements = d.querySelectorAll(selector);
             
             if (this.elements.length === 0) {

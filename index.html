@@ -15,8 +15,6 @@
                     <button class="icon icon-bold" id="editor-b" data-command="bold">&#xf032;</button>
                     <button class="icon icon-italic" id="editor-i" data-command="italic">&#xf033;</button>
                     <button class="icon icon-quote" id="editor-blockquote" data-command="quote">&#xe000;</button>
-                    <!--<button class="icon icon-list-ul" id="editor-ul" data-command="ul">&#xf0ca;</button>
-                    <button class="icon icon-list-ol" id="editor-ol" data-command="ol">&#xf0cb;</button>-->
                     <button class="heading" id="editor-h1" data-command="h1">h1</button>
                     <button class="heading" id="editor-h2" data-command="h2">h2</button>
                     <button class="heading" id="editor-h3" data-command="h3">h3</button>
@@ -39,13 +37,10 @@
                 </hgroup>
             </header>
 			<article class="editable" data-placeholder="Type your post"></article>
-
 		</section>
-
-		<!-- JS -->
 		<script src="js/editor.js"></script>
         <script>
-            var editor = new Editor('.editable', {buttons:['b', 'i', 'blockquote', 'ul', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'cancel']});
+            var editor = new Editor('.editable', {buttons:['b', 'i', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'cancel']});
         </script>
 	</body>
 </html>
