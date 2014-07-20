@@ -23,7 +23,8 @@ Include editor.js and style.css
 
 Instantiate a new Editor object passing css selector (those supported by document.querySelectorAll())
 
-```javascriptvar editor = new Editor('.editable');</script>
+```javascript
+var editor = new Editor('.editable');</script>
 
 In this example all elements with the className 'editable' will be rendered contentEditable and the toolbar enabled.
 
