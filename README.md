@@ -25,7 +25,7 @@ Instantiate a new Editor object passing css selector (those supported by documen
 
 ```javascript
 var editor = new Editor('.editable');</script>
-
+```
 In this example all elements with the className 'editable' will be rendered contentEditable and the toolbar enabled.
 
 ###Options
