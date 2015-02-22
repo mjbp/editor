@@ -46,7 +46,3 @@ Set the HTML and style formatting you would like (the buttons shown on the toolb
 ##Browser support
 Developed and tested in latest builds of Chrome and Firefox.
 
-
-##Credits
-Obvious Corp's medium.com, tholman's [http://zenpen.io] (http://zenpen.io)
-
